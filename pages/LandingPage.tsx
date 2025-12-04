@@ -5,7 +5,7 @@ import {
   Code2, Trophy, Terminal, IndianRupee, Activity, ArrowUpRight, Cpu, Globe, CheckCircle2, Shield,
   Lightbulb, GraduationCap, Building2, Wallet, Users, LayoutDashboard, Rocket, Zap, HeartHandshake, Award, MessageSquareText,
   // Add missing Lucide React icons
-  Search, Star, ChevronRight
+  Search, Star, ChevronRight, Facebook, Twitter, Linkedin, Instagram
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ProblemDetailModal from '../components/ProblemDetailModal'; // Import ProblemDetailModal
@@ -503,16 +503,61 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-950 border-t border-slate-900 py-12 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-           <div className="flex items-center text-slate-500 text-sm">
+      <footer className="bg-slate-950 py-20 px-4 text-slate-400">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
+          {/* Column 1: Logo & Description */}
+          <div>
+            <div className="flex items-center group mb-4">
+              <div className="rounded-lg p-1.5 mr-2 bg-blue-600">
+                <Code2 className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-extrabold tracking-tight text-white">FixMyProblem</span>
+            </div>
+            <p className="text-sm leading-relaxed mb-4">
+              The decentralized marketplace connecting cutting-edge companies with brilliant student minds.
+            </p>
+            <div className="flex space-x-4">
+              <a href="#" className="text-slate-400 hover:text-white transition-colors"><Facebook className="w-5 h-5" /></a>
+              <a href="#" className="text-slate-400 hover:text-white transition-colors"><Twitter className="w-5 h-5" /></a>
+              <a href="#" className="text-slate-400 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>
+              <a href="#" className="text-slate-400 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>
+            </div>
+          </div>
+
+          {/* Column 2: Quick Links */}
+          <div>
+            <h3 className="font-bold text-white text-lg mb-4">Quick Links</h3>
+            <ul className="space-y-2">
+              <li><button onClick={() => onViewChange('HOME')} className="hover:text-white transition-colors">Home</button></li>
+              <li><button onClick={() => onViewChange('LEADERBOARD')} className="hover:text-white transition-colors">Leaderboard</button></li>
+              <li><button onClick={() => onViewChange('CONTACT')} className="hover:text-white transition-colors">Contact Us</button></li>
+            </ul>
+          </div>
+
+          {/* Column 3: Platform */}
+          <div>
+            <h3 className="font-bold text-white text-lg mb-4">Platform</h3>
+            <ul className="space-y-2">
+              <li><button onClick={() => onLoginClick(UserRole.COMPANY)} className="hover:text-white transition-colors">Post a Challenge</button></li>
+              <li><button onClick={() => onLoginClick(UserRole.STUDENT)} className="hover:text-white transition-colors">Solve Challenges</button></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Legal */}
+          <div>
+            <h3 className="font-bold text-white text-lg mb-4">Legal</h3>
+            <ul className="space-y-2">
+              <li><button onClick={() => onViewChange('PRIVACY')} className="hover:text-white transition-colors">Privacy Policy</button></li>
+              <li><button onClick={() => onViewChange('TERMS')} className="hover:text-white transition-colors">Terms of Service</button></li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom section: Copyright & Admin Access */}
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
+           <div className="flex items-center text-sm">
               <Shield className="w-4 h-4 mr-2" />
               <span>&copy; 2024 FixMyProblem Inc. All rights reserved.</span>
-           </div>
-           <div className="flex gap-6 text-sm font-medium text-slate-400">
-              <button onClick={() => onViewChange('PRIVACY')} className="hover:text-white transition-colors">Privacy Policy</button>
-              <button onClick={() => onViewChange('TERMS')} className="hover:text-white transition-colors">Terms of Service</button>
-              <button onClick={() => onViewChange('CONTACT')} className="hover:text-white transition-colors">Contact Us</button>
            </div>
            <button onClick={() => onLoginClick(UserRole.ADMIN)} className="text-xs text-slate-700 hover:text-slate-500 transition-colors">
               Admin Access
