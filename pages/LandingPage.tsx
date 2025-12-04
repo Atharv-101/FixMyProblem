@@ -475,7 +475,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       </section>
 
       {/* Our Leadership (Team) Section */}
-      <section className="py-24 px-4 bg-slate-900 border-b border-slate-800">
+      {/* <section className="py-24 px-4 bg-slate-900 border-b border-slate-800">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-white leading-tight">
             Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">Leadership</span>
@@ -499,7 +499,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Live Feed */}
       <section className="bg-slate-950 py-24 px-4 relative border-b border-slate-800">
