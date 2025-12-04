@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store';
-import { UserRole, Problem, Solution } from '../types';
+import { UserRole, Problem, Solution, User } from '../types';
 import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, Sparkles, CheckCircle2, Globe, Loader2, BookOpenText, CalendarDays } from 'lucide-react';
 import { refineProblemDescription } from '../services/geminiService';
 import Modal from '../components/Modal';
 import ProfileEditModal from '../components/ProfileEditModal';
 import StarRatingInput from '../components/StarRatingInput';
 import ProblemDetailModal from '../components/ProblemDetailModal'; // Import the new modal
+import ProfileCard from '../components/ProfileCard'; // Import ProfileCard
 
 const CompanyPortal: React.FC = () => {
     const { user, problems, addProblem, acceptSolution, allUsers, editProblem, manualCloseProblem } = useStore();
@@ -28,6 +29,10 @@ const CompanyPortal: React.FC = () => {
 
     const [isRefining, setIsRefining] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+    // Profile Card hover states
+    const [showCompanyProfileCard, setShowCompanyProfileCard] = useState(false); // For current logged-in company
+    const [showStudentProfileCard, setShowStudentProfileCard] = useState<string | null>(null); // Stores studentId of hovered student
     
     const myProblems = problems.filter(p => p.companyId === user?.id);
 
@@ -94,9 +99,16 @@ const CompanyPortal: React.FC = () => {
                 <div className="flex justify-between items-center mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Company Dashboard</h1>
-                        <button onClick={() => setIsProfileOpen(true)} className="text-sm text-blue-600 hover:text-blue-800 font-bold mt-2 flex items-center">
-                            <Edit2 className="w-4 h-4 mr-1" /> Edit Company Profile
-                        </button>
+                        <div 
+                          className="relative group"
+                          onMouseEnter={() => setShowCompanyProfileCard(true)}
+                          onMouseLeave={() => setShowCompanyProfileCard(false)}
+                        >
+                            <button onClick={() => setIsProfileOpen(true)} className="text-sm text-blue-600 hover:text-blue-800 font-bold mt-2 flex items-center">
+                                <Edit2 className="w-4 h-4 mr-1" /> Edit Company Profile
+                            </button>
+                            {showCompanyProfileCard && user && <ProfileCard user={user} onClose={() => setShowCompanyProfileCard(false)} positionClasses="top-full left-0 mt-2" />}
+                        </div>
                     </div>
                     <button onClick={openPostModal} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 flex items-center shadow-md">
                         <Briefcase className="w-5 h-5 mr-2" /> Post Challenge
@@ -144,18 +156,25 @@ const CompanyPortal: React.FC = () => {
                                         Submissions <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">{p.solutions?.length || 0}</span>
                                     </h4>
                                     <div className="space-y-2">
-                                        {p.solutions?.sort((a,b) => (a.isAccepted === b.isAccepted) ? 0 : a.isAccepted ? -1 : 1).map(s => ( // Accepted solutions first
+                                        {p.solutions?.sort((a,b) => (a.isAccepted === b.isAccepted) ? 0 : a.isAccepted ? -1 : 1).map(s => { // Accepted solutions first
+                                            const studentUser = allUsers.find(u => u.id === s.studentId);
+                                            return (
                                             <div key={s.id} className={`flex justify-between items-center p-3 rounded border ${s.isAccepted ? 'bg-green-50 border-green-500 ring-1 ring-green-500' : 'bg-gray-50'}`}>
-                                                <div>
-                                                    <span className="font-bold text-gray-800">{s.studentName}</span>
+                                                <div 
+                                                  className="relative group"
+                                                  onMouseEnter={() => setShowStudentProfileCard(s.studentId)}
+                                                  onMouseLeave={() => setShowStudentProfileCard(null)}
+                                                >
+                                                    <span className="font-bold text-gray-800 cursor-help hover:underline">{s.studentName}</span>
                                                     {s.isAccepted && <span className="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded font-bold inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> ACCEPTED</span>}
+                                                    {showStudentProfileCard === s.studentId && studentUser && <ProfileCard user={studentUser} onClose={() => setShowStudentProfileCard(null)} positionClasses="top-full left-0 mt-2" />}
                                                 </div>
                                                 <div className="flex gap-2">
                                                     {s.attachmentUrl && <a href={s.attachmentUrl} target="_blank" className="text-xs p-2 rounded font-bold flex items-center hover:bg-gray-200"><Download className="w-4 h-4"/></a>}
                                                     {p.status === 'OPEN' && !s.isAccepted && <button onClick={() => setAcceptModalOpen(s)} className="text-xs bg-green-600 text-white px-3 py-1 rounded font-bold hover:bg-green-700">Accept</button>}
                                                 </div>
                                             </div>
-                                        ))}
+                                        )})}
                                         {(!p.solutions || p.solutions.length === 0) && <p className="text-sm text-gray-400 italic">No submissions yet.</p>}
                                     </div>
                                 </div>
@@ -178,9 +197,14 @@ const CompanyPortal: React.FC = () => {
                                 {topStudents.map((s, index) => (
                                     <div key={s.id} className="flex items-center border-b border-gray-50 pb-3 last:border-0 last:pb-0">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs mr-3 ${index === 0 ? 'bg-yellow-100 text-yellow-700' : index === 1 ? 'bg-gray-100 text-gray-600' : index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-50 text-slate-500'}`}>#{index + 1}</div>
-                                        <div className="flex-1">
-                                            <div className="font-bold text-sm text-gray-900">{s.name}</div>
+                                        <div 
+                                          className="flex-1 relative group"
+                                          onMouseEnter={() => setShowStudentProfileCard(s.id)}
+                                          onMouseLeave={() => setShowStudentProfileCard(null)}
+                                        >
+                                            <div className="font-bold text-sm text-gray-900 cursor-help hover:underline">{s.name}</div>
                                             <div className="text-xs text-gray-500">{s.university}</div>
+                                            {showStudentProfileCard === s.id && s && <ProfileCard user={s} onClose={() => setShowStudentProfileCard(null)} positionClasses="top-full left-0 mt-2" />}
                                         </div>
                                         <div className="text-right">
                                             <div className="font-bold text-blue-600 text-sm">{s.rating?.toFixed(1)} ★</div>

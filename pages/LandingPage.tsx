@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../context/Store';
-import { UserRole, Problem } from '../types';
+import { UserRole, Problem, User } from '../types';
 import {
   Code2, Trophy, Terminal, IndianRupee, Activity, ArrowUpRight, Cpu, Globe, CheckCircle2, Shield,
   Lightbulb, GraduationCap, Building2, Wallet, Users, LayoutDashboard, Rocket, Zap, HeartHandshake, Award, MessageSquareText,
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ProblemDetailModal from '../components/ProblemDetailModal'; // Import ProblemDetailModal
+import ProfileCard from '../components/ProfileCard'; // Import ProfileCard
 
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD';
 
@@ -22,6 +23,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
   const [scrolled, setScrolled] = useState(false);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false); // State for problem detail modal
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null); // State for selected problem
+
+  // Profile Card hover states
+  const [showProfileCard, setShowProfileCard] = useState<string | null>(null); // Stores userId for hovered profile
+  const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -41,7 +46,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       return acc + val;
     }, 0);
 
-    return { totalUsers, totalCompanies, totalStudents, totalProblems, openProblems, totalBountyValue };
+    return { totalUsers, totalCompanies, totalStudents, openProblems, totalProblems, totalBountyValue };
   }, [allUsers, problems]);
 
   const topStudents = useMemo(() => allUsers.filter(u => u.role === UserRole.STUDENT && (u.rating || 0) > 0).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3), [allUsers]);
@@ -100,6 +105,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
     setShowProblemDetailModal(false); // Close details modal first
     onViewChange('AUTH');
     onLoginClick(UserRole.STUDENT);
+  };
+
+  const handleProfileHover = (userId: string) => {
+    const userToHover = allUsers.find(u => u.id === userId);
+    setHoveredUser(userToHover || null);
+    setShowProfileCard(userId);
+  };
+
+  const handleProfileLeave = () => {
+    setShowProfileCard(null);
+    setHoveredUser(null);
   };
 
   return (
@@ -314,18 +330,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {problems.slice(0, 6).map((prob) => (
+              {problems.slice(0, 6).map((prob) => {
+                const companyUser = allUsers.find(u => u.id === prob.companyId);
+                return (
                 <div 
                   key={prob.id} 
                   onClick={() => handleOpenProblemDetails(prob)} // Open problem details on card click
                   className="bg-slate-800/50 backdrop-blur-md border border-slate-700 p-8 rounded-2xl hover:border-blue-500/50 hover:bg-slate-800 transition-all cursor-pointer group shadow-xl"
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center">
+                    <div 
+                      className="flex items-center relative"
+                      onMouseEnter={() => handleProfileHover(prob.companyId)}
+                      onMouseLeave={handleProfileLeave}
+                    >
                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center mr-3 font-bold text-lg text-slate-300">
                           {prob.companyName.charAt(0)}
                        </div>
-                       <span className="text-slate-300 text-base font-medium">{prob.companyName}</span>
+                       <span className="text-slate-300 text-base font-medium cursor-help hover:underline">{prob.companyName}</span>
+                       {showProfileCard === prob.companyId && hoveredUser && <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="top-full left-0 mt-2" />}
                     </div>
                     <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1.5 rounded-full text-sm font-mono font-bold group-hover:bg-green-500 group-hover:text-black transition-colors shadow-md">
                       {prob.bounty}
@@ -342,7 +365,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
                      ))}
                   </div>
                 </div>
-              ))}
+              )})}
               {problems.length === 0 && (
                   <div className="col-span-full text-center py-20 border border-dashed border-slate-800 rounded-2xl animate-fade-in">
                       <Cpu className="w-16 h-16 text-slate-700 mx-auto mb-6" />
@@ -374,14 +397,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
                            {i === 1 && <Trophy className="w-6 h-6 fill-gray-400 text-gray-400"/>}
                            {i === 2 && <Trophy className="w-6 h-6 fill-orange-400 text-orange-400"/>}
                          </div>
-                         <div className="flex-1">
-                             <h3 className="font-bold text-xl text-white">{s.name}</h3>
+                         <div 
+                           className="flex-1 relative"
+                           onMouseEnter={() => handleProfileHover(s.id)}
+                           onMouseLeave={handleProfileLeave}
+                         >
+                             <h3 className="font-bold text-xl text-white cursor-help hover:underline">{s.name}</h3>
                              <p className="text-slate-400 text-sm">{s.university}</p>
                              <div className="flex items-center text-blue-400 mt-2">
                                  <Star className="w-4 h-4 fill-blue-400 mr-1" />
                                  <span className="font-bold text-md">{s.rating?.toFixed(1) || '0.0'}</span>
                                  <span className="text-slate-500 text-xs ml-2">{s.solvedCount} Solved</span>
                              </div>
+                             {showProfileCard === s.id && hoveredUser && <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="bottom-full left-0 mb-2" />}
                          </div>
                      </div>
                  ))}

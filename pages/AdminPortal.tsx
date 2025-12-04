@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store';
-import { UserRole, Problem } from '../types';
+import { UserRole, Problem, User } from '../types';
 // Add Briefcase to the import statement
 import { Users, CheckCircle2, Star, Trophy, BarChart3, Loader2, ArrowLeft, Shield, Activity, AlertTriangle, Mail, Search, Lock, ChevronRight, Zap, Eye, Download, UploadCloud, FileText, Phone, Scale, Terminal, Cpu, Globe, ArrowUpRight, Settings, Trash2, Ban, Edit2, UserCircle, Camera, Award, IndianRupee, Sparkles, XCircle, Power, MapPin, Briefcase } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal'; // Import ProblemDetailModal
+import ProfileCard from '../components/ProfileCard'; // Import ProfileCard
 
 const AdminPortal: React.FC = () => {
   const { allUsers, problems, siteConfig, updateSiteConfig, adminDeleteUser, adminDeleteProblem, adminBanUser } = useStore();
@@ -11,6 +12,10 @@ const AdminPortal: React.FC = () => {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false); // New state for problem detail modal
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null); // State for selected problem
+
+  // Profile Card hover states
+  const [showProfileCard, setShowProfileCard] = useState<string | null>(null); // Stores userId for hovered profile
+  const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
   // Calculate Stats
   const stats = useMemo(() => {
@@ -59,6 +64,16 @@ const AdminPortal: React.FC = () => {
   const handleOpenProblemDetails = (problem: Problem) => {
     setCurrentProblemForDetails(problem);
     setShowProblemDetailModal(true);
+  };
+
+  const handleProfileHover = (user: User) => {
+    setHoveredUser(user);
+    setShowProfileCard(user.id);
+  };
+
+  const handleProfileLeave = () => {
+    setShowProfileCard(null);
+    setHoveredUser(null);
   };
 
   return (
@@ -147,12 +162,17 @@ const AdminPortal: React.FC = () => {
                     return (
                    <tr key={u.id} className="hover:bg-slate-50">
                      <td className="p-4 font-medium text-slate-900">
-                        <div className="flex items-center">
+                        <div 
+                          className="flex items-center relative"
+                          onMouseEnter={() => handleProfileHover(u)}
+                          onMouseLeave={handleProfileLeave}
+                        >
                             {u.profilePicUrl && <img src={u.profilePicUrl} className="w-8 h-8 rounded-full mr-2 object-cover" />}
-                            <div>
+                            <div className="cursor-help hover:underline">
                                 {u.name} <br/>
                                 <span className="text-xs text-slate-400 font-normal">{u.email}</span>
                             </div>
+                            {showProfileCard === u.id && hoveredUser && <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="bottom-full left-0 mb-2" />}
                         </div>
                      </td>
                      <td className="p-4"><span className={`text-xs font-bold px-2 py-1 rounded-full ${u.role === 'ADMIN' ? 'bg-red-100 text-red-700' : u.role === 'COMPANY' ? 'bg-blue-100 text-blue-700' : 'bg-indigo-100 text-indigo-700'}`}>{u.role}</span></td>

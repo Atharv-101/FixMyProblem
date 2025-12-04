@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store';
-import { UserRole, Problem, Solution } from '../types';
+import { UserRole, Problem, Solution, User } from '../types';
 import { GraduationCap, Search, Edit2, Star, Download, Loader2, Code2, Paperclip, Terminal, CheckCircle2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import ProfileEditModal from '../components/ProfileEditModal';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal'; // Import the new component
 import ProblemDetailModal from '../components/ProblemDetailModal'; // Import ProblemDetailModal
+import ProfileCard from '../components/ProfileCard'; // Import ProfileCard
 
 const StudentPortal: React.FC = () => {
     const { user, allUsers, problems, addSolution } = useStore();
@@ -19,6 +20,9 @@ const StudentPortal: React.FC = () => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false); // New state for success modal
     
+    // Profile Card hover state for the current student
+    const [showStudentProfileCard, setShowStudentProfileCard] = useState(false);
+
     const currentUserData = allUsers.find(u => u.id === user?.id) || user;
     const activeProblemForSubmission = problems.find(p => p.id === selectedProblemIdForSubmission);
 
@@ -64,9 +68,15 @@ const StudentPortal: React.FC = () => {
                 <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
-                        <p className="text-gray-500 flex items-center mt-1">
-                            <GraduationCap className="w-4 h-4 mr-1"/> {currentUserData?.university}
-                        </p>
+                        <div 
+                          className="text-gray-500 flex items-center mt-1 relative group"
+                          onMouseEnter={() => setShowStudentProfileCard(true)}
+                          onMouseLeave={() => setShowStudentProfileCard(false)}
+                        >
+                            <GraduationCap className="w-4 h-4 mr-1"/> 
+                            <span className="cursor-help hover:underline">{currentUserData?.name} ({currentUserData?.university})</span>
+                            {showStudentProfileCard && currentUserData && <ProfileCard user={currentUserData} onClose={() => setShowStudentProfileCard(false)} positionClasses="top-full left-0 mt-2" />}
+                        </div>
                     </div>
                     <div className="flex items-center gap-6">
                         <button onClick={() => setIsProfileOpen(true)} className="flex items-center text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-4 py-2 rounded-lg">

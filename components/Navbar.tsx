@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store';
 import { UserRole } from '../types';
 import { LogOut, Code2, Trophy, ArrowLeft } from 'lucide-react';
+import ProfileCard from './ProfileCard'; // Import ProfileCard
 
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD';
 
@@ -12,6 +13,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
   const { user, logout } = useStore();
+  const [showProfileCard, setShowProfileCard] = useState(false);
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${transparent ? 'bg-transparent pt-4' : 'bg-white/90 backdrop-blur-md border-b border-gray-200'}`}>
@@ -33,7 +35,11 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
             </button>
 
             {user ? (
-              <div className="flex items-center space-x-4">
+              <div 
+                className="flex items-center space-x-4 relative"
+                onMouseEnter={() => setShowProfileCard(true)}
+                onMouseLeave={() => setShowProfileCard(false)}
+              >
                 <div className={`text-sm hidden md:block text-right ${transparent ? 'text-white' : 'text-gray-700'}`}>
                   <div className="font-semibold">{user.name}</div>
                   <div className={`uppercase text-[10px] tracking-wider ${transparent ? 'text-white/60' : 'text-gray-500'}`}>{user.role}</div>
@@ -46,6 +52,8 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
                    </div>
                 )}
                 
+                {showProfileCard && <ProfileCard user={user} onClose={() => setShowProfileCard(false)} positionClasses="top-full right-0 mt-2" />}
+
                 <button
                   onClick={logout}
                   className={`p-2 rounded-full transition-colors ${transparent ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-100 text-gray-600'}`}
