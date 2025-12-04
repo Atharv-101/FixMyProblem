@@ -32,7 +32,7 @@ const CompanyPortal: React.FC = () => {
 
     // Profile Card hover states
     const [showCompanyProfileCard, setShowCompanyProfileCard] = useState(false); // For current logged-in company
-    const [showStudentProfileCard, setShowStudentProfileCard] = useState<string | null>(null); // Stores studentId of hovered student
+    // Removed state for showing student profile card on hover for solutions
     
     const myProblems = problems.filter(p => p.companyId === user?.id);
 
@@ -96,9 +96,9 @@ const CompanyPortal: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 pt-20 px-4 pb-12">
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Company Dashboard</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Company Dashboard</h1>
                         <div 
                           className="relative group"
                           onMouseEnter={() => setShowCompanyProfileCard(true)}
@@ -110,7 +110,7 @@ const CompanyPortal: React.FC = () => {
                             {showCompanyProfileCard && user && <ProfileCard user={user} onClose={() => setShowCompanyProfileCard(false)} positionClasses="top-full left-0 mt-2" />}
                         </div>
                     </div>
-                    <button onClick={openPostModal} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 flex items-center shadow-md">
+                    <button onClick={openPostModal} className="bg-blue-600 text-white px-5 py-2.5 md:px-6 md:py-3 rounded-lg font-bold hover:bg-blue-700 flex items-center shadow-md">
                         <Briefcase className="w-5 h-5 mr-2" /> Post Challenge
                     </button>
                 </div>
@@ -129,13 +129,13 @@ const CompanyPortal: React.FC = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-6">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 flex items-center">
                             <Briefcase className="w-5 h-5 mr-2 text-blue-600" /> Your Challenges
                         </h2>
                         {myProblems.map(p => (
                             <div key={p.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:border-blue-300 transition-colors">
                                 <div className="flex justify-between mb-4">
-                                    <h3 className="text-xl font-bold">{p.title}</h3>
+                                    <h3 className="text-lg md:text-xl font-bold">{p.title}</h3>
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => openEditModal(p)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full"><Edit2 className="w-4 h-4" /></button>
                                         {p.status === 'OPEN' && <button onClick={() => handleCloseProblem(p.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full" title="Close Problem"><Power className="w-4 h-4"/></button>}
@@ -157,17 +157,14 @@ const CompanyPortal: React.FC = () => {
                                     </h4>
                                     <div className="space-y-2">
                                         {p.solutions?.sort((a,b) => (a.isAccepted === b.isAccepted) ? 0 : a.isAccepted ? -1 : 1).map(s => { // Accepted solutions first
-                                            const studentUser = allUsers.find(u => u.id === s.studentId);
+                                            // const studentUser = allUsers.find(u => u.id === s.studentId); // No longer needed for hover
                                             return (
-                                            <div key={s.id} className={`flex justify-between items-center p-3 rounded border ${s.isAccepted ? 'bg-green-50 border-green-500 ring-1 ring-green-500' : 'bg-gray-50'}`}>
+                                            <div key={s.id} className={`flex justify-between items-center p-3 rounded border ${s.isAccepted ? 'bg-green-50 bg-green-500/10 border-green-500 ring-1 ring-green-500' : 'bg-gray-50'}`}>
                                                 <div 
-                                                  className="relative group"
-                                                  onMouseEnter={() => setShowStudentProfileCard(s.studentId)}
-                                                  onMouseLeave={() => setShowStudentProfileCard(null)}
+                                                  className="" 
                                                 >
-                                                    <span className="font-bold text-gray-800 cursor-help hover:underline">{s.studentName}</span>
+                                                    <span className="font-bold text-gray-800 text-sm">{s.studentName}</span>
                                                     {s.isAccepted && <span className="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded font-bold inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> ACCEPTED</span>}
-                                                    {showStudentProfileCard === s.studentId && studentUser && <ProfileCard user={studentUser} onClose={() => setShowStudentProfileCard(null)} positionClasses="top-full left-0 mt-2" />}
                                                 </div>
                                                 <div className="flex gap-2">
                                                     {s.attachmentUrl && <a href={s.attachmentUrl} target="_blank" className="text-xs p-2 rounded font-bold flex items-center hover:bg-gray-200"><Download className="w-4 h-4"/></a>}
@@ -190,7 +187,7 @@ const CompanyPortal: React.FC = () => {
 
                     <div className="space-y-6">
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 flex items-center">
                                 <Award className="w-5 h-5 mr-2 text-yellow-500" /> Top Ranked Students
                             </h2>
                             <div className="space-y-4">
@@ -199,12 +196,12 @@ const CompanyPortal: React.FC = () => {
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs mr-3 ${index === 0 ? 'bg-yellow-100 text-yellow-700' : index === 1 ? 'bg-gray-100 text-gray-600' : index === 2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-50 text-slate-500'}`}>#{index + 1}</div>
                                         <div 
                                           className="flex-1 relative group"
-                                          onMouseEnter={() => setShowStudentProfileCard(s.id)}
-                                          onMouseLeave={() => setShowStudentProfileCard(null)}
+                                          onMouseEnter={() => {}} // Removed functionality
+                                          onMouseLeave={() => {}} // Removed functionality
                                         >
                                             <div className="font-bold text-sm text-gray-900 cursor-help hover:underline">{s.name}</div>
                                             <div className="text-xs text-gray-500">{s.university}</div>
-                                            {showStudentProfileCard === s.id && s && <ProfileCard user={s} onClose={() => setShowStudentProfileCard(null)} positionClasses="top-full left-0 mt-2" />}
+                                            {/* Removed ProfileCard for student hover functionality here */}
                                         </div>
                                         <div className="text-right">
                                             <div className="font-bold text-blue-600 text-sm">{s.rating?.toFixed(1)} ★</div>
@@ -223,7 +220,7 @@ const CompanyPortal: React.FC = () => {
 
             <Modal isOpen={!!modalMode} onClose={() => setModalMode(null)} title={modalMode === 'EDIT' ? 'Edit Challenge' : 'Post New Challenge'}>
                 <form onSubmit={handleFormSubmit} className="space-y-4">
-                    <input required className="w-full border p-3 rounded-lg" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
+                    <input required className="w-full border p-3 rounded-lg text-sm" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
                     <div className="flex justify-between items-center mb-1">
                        <label className="block text-sm font-bold text-gray-700">Description</label>
                        <button type="button" onClick={handleAIRefine} disabled={isRefining || !desc} className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors disabled:opacity-50">
@@ -231,9 +228,9 @@ const CompanyPortal: React.FC = () => {
                             {isRefining ? 'Enhancing...' : 'Enhance with AI'}
                        </button>
                     </div>
-                    <textarea required className="w-full border p-3 rounded-lg h-32" placeholder="Description..." value={desc} onChange={e => setDesc(e.target.value)} />
-                    <input required className="w-full border p-3 rounded-lg" placeholder="Bounty (e.g. ₹5000)" value={bounty} onChange={e => setBounty(e.target.value)} />
-                     <input className="w-full border p-3 rounded-lg" placeholder="Tags (comma separated)" value={tags} onChange={e => setTags(e.target.value)} />
+                    <textarea required className="w-full border p-3 rounded-lg h-32 text-sm" placeholder="Description..." value={desc} onChange={e => setDesc(e.target.value)} />
+                    <input required className="w-full border p-3 rounded-lg text-sm" placeholder="Bounty (e.g. ₹5000)" value={bounty} onChange={e => setBounty(e.target.value)} />
+                     <input className="w-full border p-3 rounded-lg text-sm" placeholder="Tags (comma separated)" value={tags} onChange={e => setTags(e.target.value)} />
                     <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">{modalMode === 'EDIT' ? 'Save Changes' : 'Publish'}</button>
                 </form>
             </Modal>
@@ -247,7 +244,7 @@ const CompanyPortal: React.FC = () => {
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Feedback / Testimonial</label>
-                        <textarea className="w-full border p-3 rounded-lg h-24" placeholder="e.g. Excellent work on optimizing the query..." value={feedback} onChange={e => setFeedback(e.target.value)} />
+                        <textarea className="w-full border p-3 rounded-lg h-24 text-sm" placeholder="e.g. Excellent work on optimizing the query..." value={feedback} onChange={e => setFeedback(e.target.value)} />
                     </div>
                     <button onClick={handleAcceptSubmit} className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">Confirm Acceptance</button>
                 </div>

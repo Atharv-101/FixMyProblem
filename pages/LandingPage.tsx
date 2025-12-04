@@ -147,16 +147,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 animate-fade-in-up delay-300">
              <button 
                onClick={() => onLoginClick(UserRole.STUDENT)}
-               className="group relative px-10 py-4 bg-blue-600 rounded-full font-bold text-xl text-white overflow-hidden shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-blue-700"
+               className="group relative px-6 sm:px-10 py-3 sm:py-4 bg-blue-600 rounded-full font-bold text-lg sm:text-xl text-white overflow-hidden shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-blue-700"
              >
                <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full transition-transform duration-500 ease-out -skew-x-12 origin-left"></div>
-               <span className="relative flex items-center justify-center">Start Hacking <Terminal className="ml-3 w-6 h-6" /></span>
+               <span className="relative flex items-center justify-center">Start Hacking <Terminal className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6" /></span>
              </button>
              <button 
                onClick={() => onLoginClick(UserRole.COMPANY)}
-               className="px-10 py-4 bg-transparent border border-slate-700 text-white rounded-full font-bold text-xl hover:bg-slate-800 transition-colors flex items-center justify-center shadow-md"
+               className="px-6 sm:px-10 py-3 sm:py-4 bg-transparent border border-slate-700 text-white rounded-full font-bold text-lg sm:text-xl hover:bg-slate-800 transition-colors flex items-center justify-center shadow-md"
              >
-               Post a Bounty <IndianRupee className="ml-3 w-6 h-6 text-green-400" />
+               Post a Bounty <IndianRupee className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
              </button>
           </div>
 
@@ -188,10 +188,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       {/* How It Works - Students */}
       <section className="py-24 px-4 bg-slate-900 border-b border-slate-800">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-5xl font-extrabold mb-6 text-white leading-tight">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-white leading-tight">
             How Students <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Debug & Earn</span>
           </h2>
-          <p className="text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
             Ignite your career, prove your skills, and get rewarded for your intellect.
           </p>
 
@@ -200,29 +200,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
               <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-400 border border-blue-500/50">
                 <Search className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-2xl mb-3 text-white">1. Discover Challenges</h3>
-              <p className="text-slate-400 text-lg leading-relaxed">Browse a diverse range of real-world technical problems posted by companies across industries.</p>
+              <h3 className="font-bold text-xl md:text-2xl mb-3 text-white">1. Discover Challenges</h3>
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed">Browse a diverse range of real-world technical problems posted by companies across industries.</p>
             </div>
             <div className="p-8 rounded-2xl bg-slate-800/60 border border-slate-700 shadow-xl animate-fade-in-up delay-100">
               <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-purple-400 border border-purple-500/50">
                 <Code2 className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-2xl mb-3 text-white">2. Craft Solutions</h3>
-              <p className="text-slate-400 text-lg leading-relaxed">Apply your expertise to develop innovative solutions, from code fixes to detailed architectural proposals.</p>
+              <h3 className="font-bold text-xl md:text-2xl mb-3 text-white">2. Craft Solutions</h3>
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed">Apply your expertise to develop innovative solutions, from code fixes to detailed architectural proposals.</p>
             </div>
             <div className="p-8 rounded-2xl bg-slate-800/60 border border-slate-700 shadow-xl animate-fade-in-up delay-200">
               <div className="w-20 h-20 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-green-400 border border-green-500/50">
                 <Wallet className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-2xl mb-3 text-white">3. Earn & Grow</h3>
-              <p className="text-slate-400 text-lg leading-relaxed">Get recognized, receive bounties upon solution acceptance, and build a powerful, verifiable portfolio.</p>
+              <h3 className="font-bold text-xl md:text-2xl mb-3 text-white">3. Earn & Grow</h3>
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed">Get recognized, receive bounties upon solution acceptance, and build a powerful, verifiable portfolio.</p>
             </div>
           </div>
           <button 
             onClick={() => onLoginClick(UserRole.STUDENT)}
-            className="mt-20 group relative px-8 py-4 bg-blue-600 rounded-full font-bold text-xl text-white overflow-hidden shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-blue-700"
+            className="mt-20 group relative px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 rounded-full font-bold text-lg sm:text-xl text-white overflow-hidden shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-blue-700"
           >
-            <span className="relative flex items-center justify-center">Start Your Journey <GraduationCap className="ml-3 w-6 h-6" /></span>
+            <span className="relative flex items-center justify-center">Start Your Journey <GraduationCap className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6" /></span>
           </button>
         </div>
       </section>
@@ -230,10 +230,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       {/* How It Works - Companies */}
       <section className="py-24 px-4 bg-slate-950 border-b border-slate-800">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-5xl font-extrabold mb-6 text-white leading-tight">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-white leading-tight">
             How Companies <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Innovate & Recruit</span>
           </h2>
-          <p className="text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
             Accelerate your projects and discover top-tier talent from around the globe.
           </p>
 
@@ -242,29 +242,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
               <div className="w-20 h-20 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-400 border border-red-500/50">
                 <Lightbulb className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-2xl mb-3 text-white">1. Post Challenges</h3>
-              <p className="text-slate-400 text-lg leading-relaxed">Clearly define your technical problems, set a bounty, and reach a vast network of skilled students.</p>
+              <h3 className="font-bold text-xl md:text-2xl mb-3 text-white">1. Post Challenges</h3>
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed">Clearly define your technical problems, set a bounty, and reach a vast network of skilled students.</p>
             </div>
             <div className="p-8 rounded-2xl bg-slate-800/60 border border-slate-700 shadow-xl animate-fade-in-up delay-100">
               <div className="w-20 h-20 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-400 border border-orange-500/50">
                 <LayoutDashboard className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-2xl mb-3 text-white">2. Review & Evaluate</h3>
-              <p className="text-slate-400 text-lg leading-relaxed">Easily manage and review multiple solutions, provide feedback, and identify the best fit for your needs.</p>
+              <h3 className="font-bold text-xl md:text-2xl mb-3 text-white">2. Review & Evaluate</h3>
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed">Easily manage and review multiple solutions, provide feedback, and identify the best fit for your needs.</p>
             </div>
             <div className="p-8 rounded-2xl bg-slate-800/60 border border-slate-700 shadow-xl animate-fade-in-up delay-200">
               <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-400 border border-blue-500/50">
                 <Rocket className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-2xl mb-3 text-white">3. Reward & Recruit</h3>
-              <p className="text-slate-400 text-lg leading-relaxed">Award bounties to winning solutions and tap into a direct pipeline for future talent acquisition.</p>
+              <h3 className="font-bold text-xl md:text-2xl mb-3 text-white">3. Reward & Recruit</h3>
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed">Award bounties to winning solutions and tap into a direct pipeline for future talent acquisition.</p>
             </div>
           </div>
           <button 
             onClick={() => onLoginClick(UserRole.COMPANY)}
-            className="mt-20 group relative px-8 py-4 bg-purple-600 rounded-full font-bold text-xl text-white overflow-hidden shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-purple-700"
+            className="mt-20 group relative px-6 sm:px-8 py-3 sm:py-4 bg-purple-600 rounded-full font-bold text-lg sm:text-xl text-white overflow-hidden shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-purple-700"
           >
-            <span className="relative flex items-center justify-center">Accelerate Your Project <Building2 className="ml-3 w-6 h-6" /></span>
+            <span className="relative flex items-center justify-center">Accelerate Your Project <Building2 className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6" /></span>
           </button>
         </div>
       </section>
@@ -272,10 +272,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       {/* Features & Benefits */}
       <section className="py-24 px-4 bg-slate-900 border-b border-slate-800">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-5xl font-extrabold mb-6 text-white leading-tight">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-white leading-tight">
             Why Choose <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">FixMyProblem</span>?
           </h2>
-          <p className="text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
             A platform built for growth, innovation, and direct impact.
           </p>
 
@@ -319,10 +319,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
          <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center mb-12 text-center md:text-left">
                <div>
-                 <h2 className="text-5xl font-extrabold mb-4 flex flex-col md:flex-row items-center justify-center md:justify-start">
-                    <Activity className="w-12 h-12 mr-3 text-green-500 mb-2 md:mb-0" /> <span className="text-white">Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400">Challenges</span></span>
+                 <h2 className="text-4xl md:text-5xl font-extrabold mb-4 flex flex-col md:flex-row items-center justify-center md:justify-start">
+                    <Activity className="w-10 h-10 md:w-12 md:h-12 mr-3 text-green-500 mb-2 md:mb-0" /> <span className="text-white">Active <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400">Challenges</span></span>
                  </h2>
-                 <p className="text-xl text-slate-400 max-w-2xl mx-auto md:mx-0">Latest technical challenges posted by our innovative industry partners.</p>
+                 <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto md:mx-0">Latest technical challenges posted by our innovative industry partners.</p>
                </div>
                <button onClick={() => onViewChange('DASHBOARD')} className="mt-8 md:mt-0 flex items-center text-blue-400 hover:text-blue-300 font-bold text-lg group">
                   View All Challenges <ArrowUpRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -354,7 +354,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
                       {prob.bounty}
                     </span>
                   </div>
-                  <h3 className="font-bold text-2xl text-white mb-3 group-hover:text-blue-400 transition-colors line-clamp-2">{prob.title}</h3>
+                  <h3 className="font-bold text-xl md:text-2xl text-white mb-3 group-hover:text-blue-400 transition-colors line-clamp-2">{prob.title}</h3>
                   <p className="text-slate-400 text-base line-clamp-3 mb-5 font-light leading-relaxed">{prob.description}</p>
                   
                   <div className="flex flex-wrap gap-3 mt-auto">
@@ -379,10 +379,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       {/* Leaderboard Snippet */}
       <section className="py-24 px-4 bg-slate-900 border-b border-slate-800">
           <div className="max-w-7xl mx-auto text-center">
-             <h2 className="text-5xl font-extrabold mb-6 text-white leading-tight">
+             <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-white leading-tight">
                 Meet Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">Top Solvers</span>
              </h2>
-             <p className="text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
+             <p className="text-lg md:text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
                 These students are leading the charge in innovation and problem-solving.
              </p>
 
@@ -402,7 +402,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
                            onMouseEnter={() => handleProfileHover(s.id)}
                            onMouseLeave={handleProfileLeave}
                          >
-                             <h3 className="font-bold text-xl text-white cursor-help hover:underline">{s.name}</h3>
+                             <h3 className="font-bold text-lg md:text-xl text-white cursor-help hover:underline">{s.name}</h3>
                              <p className="text-slate-400 text-sm">{s.university}</p>
                              <div className="flex items-center text-blue-400 mt-2">
                                  <Star className="w-4 h-4 fill-blue-400 mr-1" />
@@ -419,9 +419,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
              </div>
              <button 
                 onClick={() => onViewChange('LEADERBOARD')}
-                className="mt-16 group relative px-8 py-4 bg-slate-800 rounded-full font-bold text-xl text-white overflow-hidden border border-slate-700 hover:border-blue-500 hover:bg-slate-700 transition-all hover:scale-105 active:scale-95"
+                className="mt-16 group relative px-6 sm:px-8 py-3 sm:py-4 bg-slate-800 rounded-full font-bold text-lg sm:text-xl text-white overflow-hidden border border-slate-700 hover:border-blue-500 hover:bg-slate-700 transition-all hover:scale-105 active:scale-95"
              >
-               <span className="relative flex items-center justify-center">View Full Leaderboard <ArrowUpRight className="ml-3 w-6 h-6 text-blue-400 group-hover:translate-x-1 transition-transform" /></span>
+               <span className="relative flex items-center justify-center">View Full Leaderboard <ArrowUpRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 text-blue-400 group-hover:translate-x-1 transition-transform" /></span>
              </button>
           </div>
       </section>
@@ -429,10 +429,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       {/* Testimonials */}
       <section className="py-24 px-4 bg-slate-950 border-b border-slate-800">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-5xl font-extrabold mb-6 text-white leading-tight">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-white leading-tight">
             What Our Users Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Saying</span>
           </h2>
-          <p className="text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-slate-400 mb-16 max-w-3xl mx-auto">
             Hear from students and companies who are already benefiting from FixMyProblem.
           </p>
 
@@ -440,7 +440,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
             {testimonials.map((testimonial, index) => (
               <div key={index} className="bg-slate-800/60 p-8 rounded-2xl border border-slate-700 shadow-xl text-left flex flex-col justify-between transform transition-transform hover:scale-105 animate-fade-in-up">
                 <MessageSquareText className="w-10 h-10 text-blue-400 mb-6 flex-shrink-0" />
-                <p className="text-white text-lg italic mb-6 leading-relaxed flex-grow">"{testimonial.quote}"</p>
+                <p className="text-white text-base md:text-lg italic mb-6 leading-relaxed flex-grow">"{testimonial.quote}"</p>
                 <div className="flex items-center mt-auto">
                   <img src={testimonial.avatar} alt={testimonial.author} className="w-12 h-12 rounded-full object-cover mr-4 border-2 border-blue-400" />
                   <div>
@@ -457,24 +457,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       {/* Final Call to Action */}
       <section className="py-24 px-4 bg-slate-900 text-center">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-6xl md:text-7xl font-black mb-8 text-white leading-tight">
+          <h2 className="text-5xl md:text-7xl font-black mb-8 text-white leading-tight">
             Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Join the Mission</span>?
           </h2>
-          <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
             Whether you're looking to solve challenging problems or find innovative solutions, FixMyProblem is your platform.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 animate-fade-in-up delay-300">
              <button 
                onClick={() => onLoginClick(UserRole.STUDENT)}
-               className="group relative px-10 py-4 bg-blue-600 rounded-full font-bold text-xl text-white overflow-hidden shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-blue-700"
+               className="group relative px-6 sm:px-10 py-3 sm:py-4 bg-blue-600 rounded-full font-bold text-lg sm:text-xl text-white overflow-hidden shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 hover:bg-blue-700"
              >
-               <span className="relative flex items-center justify-center">Start Hacking <Terminal className="ml-3 w-6 h-6" /></span>
+               <span className="relative flex items-center justify-center">Start Hacking <Terminal className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6" /></span>
              </button>
              <button 
                onClick={() => onLoginClick(UserRole.COMPANY)}
-               className="px-10 py-4 bg-transparent border border-slate-700 text-white rounded-full font-bold text-xl hover:bg-slate-800 transition-colors flex items-center justify-center shadow-md"
+               className="px-6 sm:px-10 py-3 sm:py-4 bg-transparent border border-slate-700 text-white rounded-full font-bold text-lg sm:text-xl hover:bg-slate-800 transition-colors flex items-center justify-center shadow-md"
              >
-               Post a Bounty <IndianRupee className="ml-3 w-6 h-6 text-green-400" />
+               Post a Bounty <IndianRupee className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
              </button>
           </div>
         </div>
@@ -483,18 +483,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
       {/* FAQ Section */}
       <section className="py-24 px-4 bg-slate-950 border-t border-slate-800">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-5xl font-extrabold mb-12 text-center text-white leading-tight">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-12 text-center text-white leading-tight">
             Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-green-400">Questions</span>
           </h2>
           <div className="space-y-6">
             {faqs.map((faq, index) => (
               <div key={index} className="bg-slate-800/60 p-6 rounded-xl border border-slate-700 shadow-lg animate-fade-in-up">
                 <details className="group">
-                  <summary className="flex justify-between items-center cursor-pointer font-bold text-xl text-white hover:text-blue-400 transition-colors">
+                  <summary className="flex justify-between items-center cursor-pointer font-bold text-lg md:text-xl text-white hover:text-blue-400 transition-colors">
                     {faq.question}
                     <ChevronRight className="w-6 h-6 transform transition-transform group-open:rotate-90 text-slate-400" />
                   </summary>
-                  <p className="mt-4 text-slate-300 text-lg leading-relaxed">{faq.answer}</p>
+                  <p className="mt-4 text-slate-300 text-base md:text-lg leading-relaxed">{faq.answer}</p>
                 </details>
               </div>
             ))}

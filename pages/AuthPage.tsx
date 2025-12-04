@@ -76,7 +76,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
       <div className="w-full max-w-md relative z-10">
         <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-700 rounded-2xl p-8 shadow-2xl">
           <div className="text-center mb-8">
-             <h2 className="text-3xl font-bold text-white mb-2">
+             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                 {isForgotPassword ? 'Reset Access' : (isLogin ? 'Welcome Back' : 'Join the Network')}
              </h2>
              <p className="text-slate-400 text-sm">

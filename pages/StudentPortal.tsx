@@ -67,7 +67,7 @@ const StudentPortal: React.FC = () => {
            <div className="max-w-7xl mx-auto">
                 <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Student Dashboard</h1>
                         <div 
                           className="text-gray-500 flex items-center mt-1 relative group"
                           onMouseEnter={() => setShowStudentProfileCard(true)}
@@ -79,11 +79,11 @@ const StudentPortal: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
-                        <button onClick={() => setIsProfileOpen(true)} className="flex items-center text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-4 py-2 rounded-lg">
+                        <button onClick={() => setIsProfileOpen(true)} className="flex items-center text-xs md:text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 md:px-4 md:py-2 rounded-lg">
                             <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
                         </button>
                         <div className="text-right">
-                             <div className="text-2xl font-bold text-blue-600 flex items-center justify-end">
+                             <div className="text-xl md:text-2xl font-bold text-blue-600 flex items-center justify-end">
                                 {currentUserData?.rating?.toFixed(1) || '0.0'} <Star className="w-5 h-5 ml-1 fill-blue-600 text-blue-600"/>
                              </div>
                              <div className="text-xs text-gray-500">Current Rating</div>
@@ -144,10 +144,10 @@ const StudentPortal: React.FC = () => {
 
            {/* Submit Solution Modal (now triggered from ProblemDetailModal) */}
            <Modal isOpen={!!selectedProblemIdForSubmission} onClose={() => setSelectedProblemIdForSubmission(null)} title="Submit Solution">
-                <p className="text-gray-600 mb-6">Provide your solution details below. You can paste code, describe your approach, and attach supporting files.</p>
+                <p className="text-gray-600 mb-6 text-sm">Provide your solution details below. You can paste code, describe your approach, and attach supporting files.</p>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                        <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3 flex items-center">
                             <Code2 className="w-5 h-5 mr-2 text-blue-600" /> 1. Challenge Details
                         </h3>
                         <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 border border-gray-200 font-medium">
@@ -157,7 +157,7 @@ const StudentPortal: React.FC = () => {
                     </section>
 
                     <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                        <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3 flex items-center">
                             <Terminal className="w-5 h-5 mr-2 text-green-600" /> 2. Your Solution
                         </h3>
                         <textarea 
@@ -171,7 +171,7 @@ const StudentPortal: React.FC = () => {
                     </section>
                     
                     <section>
-                        <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                        <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3 flex items-center">
                             <Paperclip className="w-5 h-5 mr-2 text-purple-600" /> 3. Attachments (Optional)
                         </h3>
                         <div>

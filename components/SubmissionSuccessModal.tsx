@@ -36,10 +36,10 @@ const SubmissionSuccessModal: React.FC<SubmissionSuccessModalProps> = ({ isOpen,
             <CheckCircle2 className="w-16 h-16" />
           </div>
 
-          <h2 id="success-title" className="text-4xl font-extrabold mb-4 animate-fade-in-up delay-100">
+          <h2 id="success-title" className="text-3xl sm:text-4xl font-extrabold mb-4 animate-fade-in-up delay-100">
             Solution Submitted!
           </h2>
-          <p className="text-xl text-white/90 mb-8 leading-relaxed animate-fade-in-up delay-200">
+          <p className="text-lg sm:text-xl text-white/90 mb-8 leading-relaxed animate-fade-in-up delay-200">
             Thank you for contributing to 
             <span className="font-bold text-green-300 ml-2">{problemTitle}</span>.
             Your dedication helps push innovation forward.

@@ -147,105 +147,109 @@ const AdminPortal: React.FC = () => {
 
         {activeTab === 'USERS' && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-             <table className="w-full text-left">
-               <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-bold">
-                 <tr>
-                   <th className="p-4">User</th>
-                   <th className="p-4">Role</th>
-                   <th className="p-4">Status</th>
-                   <th className="p-4">Actions</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-gray-100">
-                 {allUsers.map(u => {
-                    const isOnline = u.lastSeen && (Date.now() - new Date(u.lastSeen).getTime() < 5 * 60 * 1000);
-                    return (
-                   <tr key={u.id} className="hover:bg-slate-50">
-                     <td className="p-4 font-medium text-slate-900">
-                        <div 
-                          className="flex items-center relative"
-                          onMouseEnter={() => handleProfileHover(u)}
-                          onMouseLeave={handleProfileLeave}
-                        >
-                            {u.profilePicUrl && <img src={u.profilePicUrl} className="w-8 h-8 rounded-full mr-2 object-cover" />}
-                            <div className="cursor-help hover:underline">
-                                {u.name} <br/>
-                                <span className="text-xs text-slate-400 font-normal">{u.email}</span>
-                            </div>
-                            {showProfileCard === u.id && hoveredUser && <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="bottom-full left-0 mb-2" />}
-                        </div>
-                     </td>
-                     <td className="p-4"><span className={`text-xs font-bold px-2 py-1 rounded-full ${u.role === 'ADMIN' ? 'bg-red-100 text-red-700' : u.role === 'COMPANY' ? 'bg-blue-100 text-blue-700' : 'bg-indigo-100 text-indigo-700'}`}>{u.role}</span></td>
-                     <td className="p-4">
-                        <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold w-fit ${isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                            <span className={`w-2 h-2 rounded-full mr-2 ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                            {isOnline ? 'Online' : 'Offline'}
-                            </span>
-                            {u.isBanned && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold w-fit">BANNED</span>}
-                        </div>
-                     </td>
-                     <td className="p-4 flex gap-2">
-                        {u.role !== UserRole.ADMIN && (
-                            <>
-                                <button 
-                                    onClick={() => handleBanToggle(u.id, !!u.isBanned)}
-                                    disabled={processingId === u.id}
-                                    className={`p-2 rounded-full transition-colors ${u.isBanned ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}
-                                    title={u.isBanned ? "Unban User" : "Ban User"}
-                                >
-                                    {processingId === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (u.isBanned ? <CheckCircle2 className="w-4 h-4" /> : <Ban className="w-4 h-4" />)}
-                                </button>
-                                <button 
-                                    onClick={() => handleDeleteUser(u.id)}
-                                    disabled={processingId === u.id}
-                                    className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-full"
-                                    title="Permanently Delete User Data"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </>
-                        )}
-                     </td>
+             <div className="overflow-x-auto"> {/* Added for table responsiveness */}
+               <table className="w-full text-left">
+                 <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-bold">
+                   <tr>
+                     <th className="p-4 min-w-[150px]">User</th>
+                     <th className="p-4 min-w-[100px]">Role</th>
+                     <th className="p-4 min-w-[100px]">Status</th>
+                     <th className="p-4 min-w-[120px]">Actions</th>
                    </tr>
-                 )})}
-               </tbody>
-             </table>
+                 </thead>
+                 <tbody className="divide-y divide-gray-100">
+                   {allUsers.map(u => {
+                      const isOnline = u.lastSeen && (Date.now() - new Date(u.lastSeen).getTime() < 5 * 60 * 1000);
+                      return (
+                     <tr key={u.id} className="hover:bg-slate-50">
+                       <td className="p-4 font-medium text-slate-900">
+                          <div 
+                            className="flex items-center relative"
+                            onMouseEnter={() => handleProfileHover(u)}
+                            onMouseLeave={handleProfileLeave}
+                          >
+                              {u.profilePicUrl && <img src={u.profilePicUrl} className="w-8 h-8 rounded-full mr-2 object-cover" />}
+                              <div className="cursor-help hover:underline">
+                                  {u.name} <br/>
+                                  <span className="text-xs text-slate-400 font-normal">{u.email}</span>
+                              </div>
+                              {showProfileCard === u.id && hoveredUser && <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="bottom-full left-0 mb-2" />}
+                          </div>
+                       </td>
+                       <td className="p-4"><span className={`text-xs font-bold px-2 py-1 rounded-full ${u.role === 'ADMIN' ? 'bg-red-100 text-red-700' : u.role === 'COMPANY' ? 'bg-blue-100 text-blue-700' : 'bg-indigo-100 text-indigo-700'}`}>{u.role}</span></td>
+                       <td className="p-4">
+                          <div className="flex flex-col gap-1">
+                              <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold w-fit ${isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                              <span className={`w-2 h-2 rounded-full mr-2 ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                              {isOnline ? 'Online' : 'Offline'}
+                              </span>
+                              {u.isBanned && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold w-fit">BANNED</span>}
+                          </div>
+                       </td>
+                       <td className="p-4 flex gap-2">
+                          {u.role !== UserRole.ADMIN && (
+                              <>
+                                  <button 
+                                      onClick={() => handleBanToggle(u.id, !!u.isBanned)}
+                                      disabled={processingId === u.id}
+                                      className={`p-2 rounded-full transition-colors ${u.isBanned ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}
+                                      title={u.isBanned ? "Unban User" : "Ban User"}
+                                  >
+                                      {processingId === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : (u.isBanned ? <CheckCircle2 className="w-4 h-4" /> : <Ban className="w-4 h-4" />)}
+                                  </button>
+                                  <button 
+                                      onClick={() => handleDeleteUser(u.id)}
+                                      disabled={processingId === u.id}
+                                      className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-full"
+                                      title="Permanently Delete User Data"
+                                  >
+                                      <Trash2 className="w-4 h-4" />
+                                  </button>
+                              </>
+                          )}
+                       </td>
+                     </tr>
+                   )})}
+                 </tbody>
+               </table>
+             </div>
           </div>
         )}
 
         {activeTab === 'CONTENT' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-bold">
-                    <tr>
-                    <th className="p-4">Problem</th>
-                    <th className="p-4">Company</th>
-                    <th className="p-4">Bounty</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4">Actions</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                    {problems.map(p => (
-                    <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => handleOpenProblemDetails(p)}>
-                        <td className="p-4 font-medium text-slate-900 max-w-xs truncate" title={p.title}>{p.title}</td>
-                        <td className="p-4 text-sm text-gray-600">{p.companyName}</td>
-                        <td className="p-4 text-green-600 font-bold">{p.bounty}</td>
-                        <td className="p-4"><span className={`px-2 py-0.5 rounded text-xs font-bold ${p.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>{p.status}</span></td>
-                        <td className="p-4">
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteProblem(p.id); }} // Stop propagation to prevent row click
-                                disabled={processingId === p.id}
-                                className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-full"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </td>
-                    </tr>
-                    ))}
-                </tbody>
-                </table>
+                <div className="overflow-x-auto"> {/* Added for table responsiveness */}
+                    <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-bold">
+                        <tr>
+                        <th className="p-4 min-w-[150px]">Problem</th>
+                        <th className="p-4 min-w-[100px]">Company</th>
+                        <th className="p-4 min-w-[100px]">Bounty</th>
+                        <th className="p-4 min-w-[80px]">Status</th>
+                        <th className="p-4 min-w-[60px]">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {problems.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => handleOpenProblemDetails(p)}>
+                            <td className="p-4 font-medium text-slate-900 max-w-xs truncate" title={p.title}>{p.title}</td>
+                            <td className="p-4 text-sm text-gray-600">{p.companyName}</td>
+                            <td className="p-4 text-green-600 font-bold">{p.bounty}</td>
+                            <td className="p-4"><span className={`px-2 py-0.5 rounded text-xs font-bold ${p.status === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>{p.status}</span></td>
+                            <td className="p-4">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteProblem(p.id); }} // Stop propagation to prevent row click
+                                    disabled={processingId === p.id}
+                                    className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-full"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </td>
+                        </tr>
+                        ))}
+                    </tbody>
+                    </table>
+                </div>
             </div>
         )}
 

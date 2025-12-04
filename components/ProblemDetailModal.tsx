@@ -14,7 +14,7 @@ interface ProblemDetailModalProps {
 const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose, problem, onSolveClick }) => {
   const { allUsers } = useStore(); // Access allUsers
   const [showCompanyProfileCard, setShowCompanyProfileCard] = useState(false);
-  const [showStudentProfileCard, setShowStudentProfileCard] = useState<string | null>(null); // Stores studentId of hovered student
+  // Removed state for showing student profile card on hover for solutions
 
   if (!isOpen || !problem) return null;
 
@@ -79,17 +79,15 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
           {problem.solutions && problem.solutions.length > 0 ? (
             <div className="space-y-4">
               {problem.solutions.sort((a,b) => (a.isAccepted === b.isAccepted) ? 0 : a.isAccepted ? -1 : 1).map((s: Solution) => { // Accepted solutions first
-                const studentUser = allUsers.find(u => u.id === s.studentId);
+                // const studentUser = allUsers.find(u => u.id === s.studentId); // No longer needed for hover
                 return (
                 <div key={s.id} className={`p-4 rounded-lg ${s.isAccepted ? 'bg-green-500/20 border border-green-400' : 'bg-white/10 border border-white/20'}`}>
                   <div className="flex justify-between items-center mb-2">
                     <span 
-                      className="font-bold text-lg relative group cursor-help hover:underline"
-                      onMouseEnter={() => setShowStudentProfileCard(s.studentId)}
-                      onMouseLeave={() => setShowStudentProfileCard(null)}
+                      className="font-bold text-lg" // Removed relative group, onMouseEnter, onMouseLeave, and cursor-help/hover:underline
                     >
                       {s.studentName}
-                      {showStudentProfileCard === s.studentId && studentUser && <ProfileCard user={studentUser} onClose={() => setShowStudentProfileCard(null)} positionClasses="top-full left-0 mt-2" />}
+                      {/* {showStudentProfileCard === s.studentId && studentUser && <ProfileCard user={studentUser} onClose={() => setShowStudentProfileCard(null)} positionClasses="top-full left-0 mt-2" />} */}
                     </span>
                     {s.isAccepted && (
                       <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded font-bold inline-flex items-center gap-1">

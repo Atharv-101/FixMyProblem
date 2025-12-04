@@ -27,24 +27,24 @@ const ContactPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 pt-20 px-4 pb-12">
             <div className="max-w-5xl mx-auto">
-                <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-10">Get in Touch</h1>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-10">Get in Touch</h1>
                 
                 <div className="grid md:grid-cols-2 gap-12">
                     {/* Contact Information */}
                     <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center">
                             <Phone className="w-6 h-6 mr-3 text-blue-600" /> Our Details
                         </h2>
                         <div className="space-y-6 text-gray-700">
-                            <div className="flex items-center">
+                            <div className="flex items-center text-sm md:text-base">
                                 <Mail className="w-5 h-5 mr-4 text-gray-500" />
                                 <span className="font-semibold">Email:</span> <a href="mailto:support@fixmyproblem.com" className="ml-2 text-blue-600 hover:underline">support@fixmyproblem.com</a>
                             </div>
-                            <div className="flex items-center">
+                            <div className="flex items-center text-sm md:text-base">
                                 <Phone className="w-5 h-5 mr-4 text-gray-500" />
                                 <span className="font-semibold">Phone:</span> <a href="tel:+11234567890" className="ml-2 text-blue-600 hover:underline">+1 (123) 456-7890</a>
                             </div>
-                            <div className="flex items-start">
+                            <div className="flex items-start text-sm md:text-base">
                                 <MapPin className="w-5 h-5 mr-4 mt-1 text-gray-500 flex-shrink-0" />
                                 <div>
                                     <span className="font-semibold block">Address:</span> 
@@ -52,7 +52,7 @@ const ContactPage: React.FC = () => {
                                 </div>
                             </div>
                             <div className="pt-6 border-t border-gray-100 mt-6">
-                                <p className="text-sm text-gray-500">
+                                <p className="text-xs md:text-sm text-gray-500">
                                     We're here to help! Whether you have questions about posting a problem, submitting a solution, or general inquiries, feel free to reach out.
                                 </p>
                             </div>
@@ -61,7 +61,7 @@ const ContactPage: React.FC = () => {
 
                     {/* Contact Form */}
                     <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center">
                             <FileText className="w-6 h-6 mr-3 text-green-600" /> Send Us a Message
                         </h2>
                         <form onSubmit={handleSubmit} className="space-y-5">
@@ -119,12 +119,12 @@ const ContactPage: React.FC = () => {
                             </button>
 
                             {status === 'success' && (
-                                <div className="mt-4 bg-green-100 text-green-700 p-3 rounded-lg flex items-center">
+                                <div className="mt-4 bg-green-100 text-green-700 p-3 rounded-lg flex items-center text-sm">
                                     <CheckCircle2 className="w-5 h-5 mr-2" /> Message sent successfully! We'll get back to you soon.
                                 </div>
                             )}
                             {status === 'error' && (
-                                <div className="mt-4 bg-red-100 text-red-700 p-3 rounded-lg flex items-center">
+                                <div className="mt-4 bg-red-100 text-red-700 p-3 rounded-lg flex items-center text-sm">
                                     <XCircle className="w-5 h-5 mr-2" /> Failed to send message. Please try again later.
                                 </div>
                             )}
