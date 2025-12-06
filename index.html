@@ -48,7 +48,7 @@
               'fade-out': {
                 '0%': { opacity: '1' },
                 '100%': { opacity: '0' },
-              },
+              }
             },
             animation: {
               'fade-in-up': 'fade-in-up 0.5s ease-out forwards',
@@ -71,7 +71,6 @@
   <script type="importmap">
 {
   "imports": {
-    "@/": "./",
     "react-dom/": "https://esm.sh/react-dom@18.2.0/",
     "react": "https://esm.sh/react@18.2.0",
     "react/": "https://esm.sh/react@18.2.0/",
@@ -83,7 +82,8 @@
     "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js",
     "firebase/storage": "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js",
     "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "three": "https://aistudiocdn.com/three@^0.181.2"
   }
 }
 </script>
@@ -91,5 +91,6 @@
   <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
+    <link rel="stylesheet" href="./style.css"> 
   </body>
 </html>

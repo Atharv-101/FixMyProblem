@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store';
 import { UserRole } from '../types';
-import { LogOut, Code2, Trophy, ArrowLeft, Info, Briefcase, Mail, Menu, X } from 'lucide-react'; // Added Menu, X
+import { LogOut, Code2, Trophy, ArrowLeft, Info, Briefcase, Mail, Menu, X, Infinity } from 'lucide-react'; // Added Infinity
 import ProfileCard from './ProfileCard'; // Import ProfileCard
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD';
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' ; 
 
 interface NavbarProps {
   onViewChange: (view: ViewState) => void;
@@ -137,18 +137,12 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-40 flex flex-col items-center justify-center animate-fade-in-down">
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="absolute top-6 right-6 p-2 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Close menu"
-          >
-            <X className="h-8 w-8" />
-          </button>
-
-          <div className="flex flex-col items-center space-y-4 w-full px-6">
+        <div className="md:hidden absolute top-full left-0 w-full bg-slate-950/95 backdrop-blur-xl z-30 flex flex-col items-start px-6 py-4 border-t border-slate-700 shadow-lg
+                    max-h-screen overflow-y-auto transition-all duration-300 ease-in-out">
+          
+          <div className="flex flex-col items-center space-y-4 w-full">
             {renderNavLinks(true)}
 
             {user ? (

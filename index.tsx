@@ -1,5 +1,6 @@
+
 import React, { Component, ReactNode, ErrorInfo } from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client'; // Corrected import
 import App from './App';
 
 interface Props {
@@ -59,7 +60,7 @@ if (!rootElement) {
 }
 
 try {
-  const root = ReactDOM.createRoot(rootElement);
+  const root = createRoot(rootElement); // Corrected usage
   root.render(
     <React.StrictMode>
       <ErrorBoundary>
