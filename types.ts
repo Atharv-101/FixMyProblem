@@ -7,17 +7,33 @@ export enum UserRole {
 }
 
 export interface SiteConfig {
-  baseFontSize: number; // in pixels, default 16
-  enableDarkMode: boolean; // default true
+  baseFontSize: number;
+  enableDarkMode: boolean;
 }
 
 export interface Review {
   id: string;
   problemTitle: string;
-  rating: number; // 1-5
+  rating: number;
   feedback: string;
   createdAt: string;
   companyName: string;
+}
+
+export interface Payment {
+  id: string;
+  problemId: string;
+  problemTitle: string;
+  amount: string; // Gross amount
+  commissionAmount: string; // 10%
+  netAmount: string; // 90%
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
+  fromId: string;
+  fromName: string;
+  toId: string;
+  toName: string;
+  timestamp: string;
+  method: string;
 }
 
 export interface User {
@@ -25,18 +41,17 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
-  university?: string; // Only for students
-  companyName?: string; // Only for companies
-  rating?: number; // Only for students (0-5)
+  university?: string;
+  companyName?: string;
+  rating?: number;
   solvedCount?: number;
   reviews?: Review[];
-  lastSeen?: string; // Timestamp for online presence
-  // Profile Fields
+  lastSeen?: string;
   bio?: string;
   profilePicUrl?: string;
-  skills?: string[]; // Array of strings for tags
-  websiteUrl?: string; // For companies or portfolios
-  isBanned?: boolean; // Status for admin ban
+  skills?: string[];
+  websiteUrl?: string;
+  isBanned?: boolean;
 }
 
 export interface Solution {

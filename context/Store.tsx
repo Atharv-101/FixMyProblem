@@ -1,13 +1,15 @@
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { User, Problem, UserRole, Solution, Review, SiteConfig } from '../types';
+import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment } from '../types';
 import { auth, db } from '../services/firebase';
-import { supabase } from '../services/supabase'; // Import Supabase Client
+import { supabase } from '../services/supabase';
 
 interface AppContextType {
   user: User | null;
   loading: boolean;
   allUsers: User[];
   problems: Problem[];
+  payments: Payment[];
   siteConfig: SiteConfig;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, role: UserRole, name: string, extraInfo: string) => Promise<void>;
@@ -17,10 +19,8 @@ interface AppContextType {
   editProblem: (problemId: string, title: string, description: string, bounty: string, tags: string[]) => Promise<void>;
   manualCloseProblem: (problemId: string) => Promise<void>;
   addSolution: (problemId: string, content: string, file?: File) => Promise<void>;
-  acceptSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string) => void;
-  // Profile Functions
+  acceptSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, paymentMethod: string) => Promise<void>;
   updateUserProfile: (name: string, bio: string, skills: string[], file?: File, websiteUrl?: string) => Promise<void>;
-  // Admin Functions
   adminBanUser: (userId: string, currentStatus: boolean) => Promise<void>;
   adminDeleteUser: (userId: string) => Promise<void>;
   adminDeleteProblem: (problemId: string) => Promise<void>;
@@ -34,375 +34,208 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(true);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [problems, setProblems] = useState<Problem[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({ baseFontSize: 16, enableDarkMode: true });
   
-  // Refs to track subscriptions to prevent memory leaks and duplicate listeners
   const solutionUnsubscribes = useRef<Record<string, () => void>>({});
 
-  // 0. Sync Site Config
   useEffect(() => {
     const docRef = db.collection("settings").doc("global");
-    const unsub = docRef.onSnapshot((docSnap) => {
+    const unsub = docRef.onSnapshot(
+      (docSnap) => {
         if (docSnap.exists) {
             setSiteConfig(docSnap.data() as SiteConfig);
-        } else {
-            docRef.set({ baseFontSize: 16, enableDarkMode: true }).catch(e => console.warn("Config init failed", e));
         }
-    }, (error) => {
-        console.warn("Site config sync failed (Permission Denied?): Using defaults.", error.message);
-    });
+      },
+      (error) => {
+        console.warn("Settings listener restricted:", error.message);
+      }
+    );
     return () => unsub();
   }, []);
 
-  // 1. Monitor Auth State
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser && firebaseUser.emailVerified) {
         try {
           const docRef = db.collection("users").doc(firebaseUser.uid);
-          let docSnap = await docRef.get();
-
-          if (!docSnap.exists) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            docSnap = await docRef.get();
-          }
-
+          const docSnap = await docRef.get();
           if (docSnap.exists) {
             const userData = { id: firebaseUser.uid, ...docSnap.data() } as User;
-            
-            if (userData.isBanned) {
-                console.warn("User is banned. Forcing logout.");
-                await auth.signOut();
-                alert("Your account has been suspended by the Administrator.");
-                setUser(null);
-            } else {
-                setUser(userData);
-            }
-          } else {
-            console.error("User authenticated but profile missing in Firestore. Auto-cleaning up.");
-            await auth.signOut();
-            setUser(null);
+            if (!userData.isBanned) setUser(userData);
+            else await auth.signOut();
           }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+        } catch (error) { setUser(null); }
+      } else { setUser(null); }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // 2. Sync All Users
   useEffect(() => {
-    const q = db.collection("users");
-    const unsubscribe = q.onSnapshot((snapshot) => {
-      const usersList: User[] = [];
-      snapshot.forEach((doc) => {
-        usersList.push({ id: doc.id, ...doc.data() } as User);
-      });
-      setAllUsers(usersList);
-    }, (error) => {
-      if (!user) setAllUsers([]);
-    });
-    return () => unsubscribe();
-  }, [user?.id]); 
+    if (!user) {
+      setAllUsers([]);
+      return;
+    }
+    const unsub = db.collection("users").onSnapshot(
+      (snapshot) => {
+        setAllUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
+      },
+      (error) => {
+        console.warn("Users list listener restricted:", error.message);
+      }
+    );
+    return () => unsub();
+  }, [user?.id]);
 
-  // 3. Sync Problems
   useEffect(() => {
-    const q = db.collection("problems").orderBy("createdAt", "desc");
-    
-    const unsubscribeProblems = q.onSnapshot((snapshot) => {
-      const problemsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        solutions: [] 
-      })) as Problem[];
-
-      setProblems(prevProblems => {
-        return problemsData.map(newProb => {
-          const existing = prevProblems.find(p => p.id === newProb.id);
-          return existing ? { ...newProb, solutions: existing.solutions } : newProb;
-        });
-      });
-
-      if (user) {
-        problemsData.forEach(problem => {
-          if (!solutionUnsubscribes.current[problem.id]) {
-            const solutionsRef = db.collection("problems").doc(problem.id).collection("solutions");
-            
-            const unsub = solutionsRef.onSnapshot((solSnap) => {
-              const solutions = solSnap.docs.map(s => ({ id: s.id, ...s.data() } as Solution));
-              
-              setProblems(current => current.map(p => {
-                if (p.id === problem.id) {
-                  return { ...p, solutions };
-                }
-                return p;
-              }));
-            }, (error) => {
-              console.warn(`Error fetching solutions for problem ${problem.id}:`, error.message);
-            });
-
-            solutionUnsubscribes.current[problem.id] = unsub;
+    const unsub = db.collection("problems").orderBy("createdAt", "desc").onSnapshot(
+      (snapshot) => {
+        const problemsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), solutions: [] })) as Problem[];
+        setProblems(problemsData);
+        
+        problemsData.forEach(p => {
+          if (!solutionUnsubscribes.current[p.id]) {
+            solutionUnsubscribes.current[p.id] = db.collection("problems").doc(p.id).collection("solutions").onSnapshot(
+              (s) => {
+                setProblems(current => current.map(cp => cp.id === p.id ? { ...cp, solutions: s.docs.map(sd => ({ id: sd.id, ...sd.data() } as Solution)) } : cp));
+              },
+              (err) => {
+                console.warn(`Solutions listener restricted for problem ${p.id}:`, err.message);
+              }
+            );
           }
         });
+      },
+      (error) => {
+        console.warn("Problems listener restricted:", error.message);
       }
-      
-    }, (error) => {
-      console.warn("Error fetching problems:", error.message);
-    });
-
+    );
     return () => {
-      unsubscribeProblems();
-      (Object.values(solutionUnsubscribes.current) as (() => void)[]).forEach(unsub => unsub());
+      unsub();
+      Object.values(solutionUnsubscribes.current).forEach(u => u());
       solutionUnsubscribes.current = {};
     };
-  }, [user?.id]); 
+  }, [user?.id]);
 
-  // 4. Presence Heartbeat
   useEffect(() => {
-    if (!user) return;
-    const updatePresence = async () => {
-      try {
-        await db.collection("users").doc(user.id).update({
-          lastSeen: new Date().toISOString()
-        });
-      } catch (e) {}
-    };
-    updatePresence();
-    const interval = setInterval(updatePresence, 120000);
-    return () => clearInterval(interval);
+    if (!user) { setPayments([]); return; }
+    const q = db.collection("payments").orderBy("timestamp", "desc");
+    const unsub = q.onSnapshot(
+      (snap) => {
+        const allPayments = snap.docs.map(d => ({ id: d.id, ...d.data() } as Payment));
+        if (user.role === UserRole.ADMIN) setPayments(allPayments);
+        else setPayments(allPayments.filter(p => p.fromId === user.id || p.toId === user.id));
+      },
+      (error) => {
+        console.warn("Payments listener restricted:", error.message);
+      }
+    );
+    return () => unsub();
   }, [user?.id]);
 
   const login = async (email: string, password: string) => {
-    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-    if (!userCredential.user!.emailVerified) {
-      await auth.signOut();
-      throw new Error("Please verify your email address before logging in. Check your inbox.");
-    }
+    await auth.signInWithEmailAndPassword(email, password);
   };
 
   const register = async (email: string, password: string, role: UserRole, name: string, extraInfo: string) => {
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user!.uid;
-
-    try {
-      const newUser: User = {
-        id: uid,
-        email,
-        name,
-        role,
-        university: role === UserRole.STUDENT ? (extraInfo || null) : null,
-        companyName: role === UserRole.COMPANY ? (extraInfo || null) : null,
-        rating: role === UserRole.STUDENT ? 0 : null,
-        solvedCount: 0,
-        reviews: [],
-        lastSeen: new Date().toISOString(),
-        bio: '',
-        profilePicUrl: '',
-        skills: []
-      };
-
-      await db.collection("users").doc(uid).set(newUser as any);
-      await userCredential.user!.sendEmailVerification();
-      await auth.signOut();
-    } catch (error) {
-      console.error("Failed to create user profile in Firestore. Rolling back Auth.", error);
-      await userCredential.user!.delete();
-      throw new Error("Registration failed. Please try again.");
-    }
-  };
-
-  const logout = async () => {
+    const newUser = { id: uid, email, name, role, university: role === UserRole.STUDENT ? extraInfo : null, companyName: role === UserRole.COMPANY ? extraInfo : null, rating: role === UserRole.STUDENT ? 0 : null, solvedCount: 0, reviews: [], lastSeen: new Date().toISOString(), bio: '', profilePicUrl: '', skills: [] };
+    await db.collection("users").doc(uid).set(newUser);
+    await userCredential.user!.sendEmailVerification();
     await auth.signOut();
-    setUser(null);
-    setAllUsers([]);
   };
 
-  const resetPassword = async (email: string) => {
-    await auth.sendPasswordResetEmail(email);
-  };
-
-  const updateUserProfile = async (name: string, bio: string, skills: string[], file?: File, websiteUrl?: string) => {
-    if (!user) throw new Error("You must be logged in to update your profile.");
-    
-    const updates: any = {
-        name,
-        bio: bio || "",
-        skills: skills || [],
-    };
-    if (websiteUrl !== undefined) updates.websiteUrl = websiteUrl;
-
-    try {
-        await db.collection("users").doc(user.id).update(updates);
-        console.log("Firestore profile updated successfully.");
-        setUser(prev => prev ? { ...prev, ...updates } : null);
-    } catch (e: any) {
-        console.error("Error updating Firestore profile:", e);
-        if (e.code === 'permission-denied') {
-             throw new Error("Permission denied: Check Firestore Rules.");
-        }
-        throw new Error("Failed to save profile data.");
-    }
-  };
+  const logout = () => auth.signOut();
+  const resetPassword = (email: string) => auth.sendPasswordResetEmail(email);
 
   const addProblem = async (title: string, description: string, bounty: string, tags: string[]) => {
     if (!user || user.role !== UserRole.COMPANY) return;
-    const newProblem = {
-      companyId: user.id,
-      companyName: user.companyName || 'Unknown Company',
-      title,
-      description,
-      bounty,
-      status: 'OPEN',
-      createdAt: new Date().toISOString(),
-      tags,
-    };
-    await db.collection("problems").add(newProblem);
+    await db.collection("problems").add({ companyId: user.id, companyName: user.companyName, title, description, bounty, status: 'OPEN', createdAt: new Date().toISOString(), tags });
   };
 
-  const editProblem = async (problemId: string, title: string, description: string, bounty: string, tags: string[]) => {
-    if (!user || user.role !== UserRole.COMPANY) return;
-    const problemRef = db.collection("problems").doc(problemId);
-    await problemRef.update({ title, description, bounty, tags });
+  const editProblem = async (id: string, title: string, description: string, bounty: string, tags: string[]) => {
+    await db.collection("problems").doc(id).update({ title, description, bounty, tags });
   };
 
-  const manualCloseProblem = async (problemId: string) => {
-    if (!user || user.role !== UserRole.COMPANY) return;
-    const problemRef = db.collection("problems").doc(problemId);
-    await problemRef.update({ status: 'CLOSED' });
+  const manualCloseProblem = async (id: string) => {
+    await db.collection("problems").doc(id).update({ status: 'CLOSED' });
   };
 
   const addSolution = async (problemId: string, content: string, file?: File) => {
-    if (!user) throw new Error("You must be logged in.");
-    if (user.role !== UserRole.STUDENT) throw new Error("Only students can submit solutions.");
-
-    let attachmentUrl = null;
-    let attachmentName = null;
-    let finalContent = content;
-
+    if (!user) return;
+    let attachmentUrl = null, attachmentName = null;
     if (file) {
-      try {
-        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const filePath = `${problemId}/${user.id}/${Date.now()}_${safeName}`;
-        
-        const { error } = await supabase.storage.from('solutions').upload(filePath, file);
-
-        if (error) throw error;
-
-        const { data: publicUrlData } = supabase.storage.from('solutions').getPublicUrl(filePath);
-        attachmentUrl = publicUrlData.publicUrl;
-        attachmentName = file.name;
-        
-      } catch (error: any) {
-        console.error("File upload failed (Supabase):", error);
-        alert(`File upload failed: ${error.message}. Submitting text only.`);
-        finalContent += `\n\n[System Note: Attachment '${file.name}' upload failed.]`;
-      }
+      const path = `${problemId}/${user.id}/${Date.now()}_${file.name}`;
+      await supabase.storage.from('solutions').upload(path, file);
+      attachmentUrl = supabase.storage.from('solutions').getPublicUrl(path).data.publicUrl;
+      attachmentName = file.name;
     }
-
-    try {
-        const newSolution = {
-            problemId,
-            studentId: user.id,
-            studentName: user.name,
-            content: finalContent,
-            submittedAt: new Date().toISOString(),
-            isAccepted: false,
-            attachmentUrl,
-            attachmentName
-        };
-        await db.collection("problems").doc(problemId).collection("solutions").add(newSolution);
-    } catch (e: any) {
-        console.error("Database save failed:", e);
-        throw new Error("Failed to save solution to database.");
-    }
+    await db.collection("problems").doc(problemId).collection("solutions").add({ problemId, studentId: user.id, studentName: user.name, content, submittedAt: new Date().toISOString(), isAccepted: false, attachmentUrl, attachmentName });
   };
 
-  const acceptSolution = async (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string) => {
-    try {
-      await db.runTransaction(async (transaction) => {
-        const problemRef = db.collection("problems").doc(problemId);
-        const solutionRef = db.collection("problems").doc(problemId).collection("solutions").doc(solutionId);
-        const studentRef = db.collection("users").doc(studentId);
-        
-        const studentDoc = await transaction.get(studentRef);
-        const problemDoc = await transaction.get(problemRef); 
-        const studentData = studentDoc.data();
-        if (!studentData) throw "Student not found";
-        
-        const problemTitle = problemDoc.exists ? problemDoc.data()!.title : "Unknown Problem";
+  const acceptSolution = async (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, paymentMethod: string) => {
+    if (!user) return;
+    const prob = problems.find(p => p.id === problemId);
+    const student = allUsers.find(u => u.id === studentId);
+    if (!prob || !student) return;
 
-        transaction.update(solutionRef, { isAccepted: true, rating, feedback });
-        transaction.update(problemRef, { status: 'CLOSED' });
+    const grossAmount = parseFloat(prob.bounty.replace(/[^0-9.]/g, '')) || 0;
+    const commission = grossAmount * 0.1;
+    const netPayout = grossAmount - commission;
 
-        const currentSolved = studentData.solvedCount || 0;
-        const currentRating = studentData.rating || 0;
-        const currentReviews = studentData.reviews || [];
+    await db.runTransaction(async (transaction) => {
+      const probRef = db.collection("problems").doc(problemId);
+      const solRef = probRef.collection("solutions").doc(solutionId);
+      const studentRef = db.collection("users").doc(studentId);
+      const payRef = db.collection("payments").doc();
 
-        const newReview: Review = {
-          id: solutionId, 
-          problemTitle,
-          rating,
-          feedback,
-          createdAt: new Date().toISOString(),
-          companyName: user?.companyName || 'Company'
-        };
+      transaction.update(solRef, { isAccepted: true, rating, feedback });
+      transaction.update(probRef, { status: 'CLOSED' });
 
-        const totalScore = (currentRating * currentReviews.length) + rating;
-        const newRating = Number((totalScore / (currentReviews.length + 1)).toFixed(1));
+      const newReview = { id: solutionId, problemTitle: prob.title, rating, feedback, createdAt: new Date().toISOString(), companyName: user.companyName };
+      const totalScore = ((student.rating || 0) * (student.reviews?.length || 0)) + rating;
+      const newRating = Number((totalScore / ((student.reviews?.length || 0) + 1)).toFixed(1));
 
-        transaction.update(studentRef, {
-          solvedCount: currentSolved + 1,
-          rating: newRating,
-          reviews: [...currentReviews, newReview]
-        });
+      transaction.update(studentRef, { 
+        solvedCount: (student.solvedCount || 0) + 1, 
+        rating: newRating, 
+        reviews: [...(student.reviews || []), newReview] 
       });
-    } catch (e) {
-      console.error("Transaction failed: ", e);
-      alert("Failed to accept solution. Please try again.");
-    }
+
+      transaction.set(payRef, {
+        problemId,
+        problemTitle: prob.title,
+        amount: prob.bounty,
+        commissionAmount: `₹${commission.toFixed(0)}`,
+        netAmount: `₹${netPayout.toFixed(0)}`,
+        status: 'COMPLETED',
+        fromId: user.id,
+        fromName: user.companyName,
+        toId: studentId,
+        toName: student.name,
+        timestamp: new Date().toISOString(),
+        method: paymentMethod
+      });
+    });
   };
 
-  const adminBanUser = async (userId: string, currentStatus: boolean) => {
-    if (!user || user.role !== UserRole.ADMIN) return;
-    try {
-        await db.collection("users").doc(userId).update({
-            isBanned: !currentStatus
-        });
-    } catch (e) {
-        console.error("Failed to ban/unban user", e);
-        throw e;
-    }
+  const updateUserProfile = async (name: string, bio: string, skills: string[], file?: File, websiteUrl?: string) => {
+    if (!user) return;
+    await db.collection("users").doc(user.id).update({ name, bio, skills, websiteUrl });
+    setUser(prev => prev ? { ...prev, name, bio, skills, websiteUrl } : null);
   };
 
-  const adminDeleteUser = async (userId: string) => {
-    if (!user || user.role !== UserRole.ADMIN) return;
-    try { await db.collection("users").doc(userId).delete(); } catch (e) { throw e; }
+  const adminBanUser = async (id: string, status: boolean) => {
+    await db.collection("users").doc(id).update({ isBanned: !status });
   };
-
-  const adminDeleteProblem = async (problemId: string) => {
-    if (!user || user.role !== UserRole.ADMIN) return;
-    try { await db.collection("problems").doc(problemId).delete(); } catch (e) { throw e; }
-  };
-
-  const updateSiteConfig = async (newConfig: Partial<SiteConfig>) => {
-    if (!user || user.role !== UserRole.ADMIN) return;
-    await db.collection("settings").doc("global").set(newConfig, { merge: true });
-  };
+  const adminDeleteUser = async (id: string) => { await db.collection("users").doc(id).delete(); };
+  const adminDeleteProblem = async (id: string) => { await db.collection("problems").doc(id).delete(); };
+  const updateSiteConfig = async (c: Partial<SiteConfig>) => { await db.collection("settings").doc("global").set(c, { merge: true }); };
 
   return (
-    <AppContext.Provider value={{ 
-        user, loading, allUsers, problems, siteConfig,
-        login, register, logout, resetPassword, 
-        addProblem, addSolution, acceptSolution,
-        editProblem, manualCloseProblem,
-        updateUserProfile,
-        adminBanUser, adminDeleteUser, adminDeleteProblem, updateSiteConfig
-    }}>
+    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, addSolution, acceptSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminDeleteUser, adminDeleteProblem, updateSiteConfig }}>
       {children}
     </AppContext.Provider>
   );
