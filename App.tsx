@@ -25,14 +25,6 @@ const FixMyProblemApp: React.FC = () => {
   const [authRole, setAuthRole] = useState<UserRole>(UserRole.STUDENT);
 
   useEffect(() => {
-    if (view === 'HOME' && !user) {
-      document.body.classList.add('landing-active');
-    } else {
-      document.body.classList.remove('landing-active');
-    }
-  }, [view, user]);
-
-  useEffect(() => {
     if (user && view === 'AUTH') setView('DASHBOARD');
   }, [user]);
 
@@ -64,9 +56,11 @@ const FixMyProblemApp: React.FC = () => {
   const showGlobalNav = view !== 'HOME' && view !== 'AUTH';
 
   return (
-    <div className="font-sans text-black bg-paper min-h-screen" style={{ fontSize: `${siteConfig.baseFontSize}px` }}>
+    <div className="font-sans text-black bg-paper min-h-screen transition-all" style={{ fontSize: `${siteConfig.baseFontSize}px` }}>
       {showGlobalNav && <Navbar onViewChange={setView} />}
-      {currentContent}
+      <main className="w-full">
+        {currentContent}
+      </main>
       <ScrollToTopButton />
     </div>
   );

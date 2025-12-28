@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment } from '../types.ts';
 import { auth, db } from '../services/firebase.ts';
 import { supabase } from '../services/supabase.ts';
+import { refineProblemDescription } from '../services/geminiService.ts';
 
 interface AppContextType {
   user: User | null;
@@ -15,7 +16,7 @@ interface AppContextType {
   register: (email: string, password: string, role: UserRole, name: string, extraInfo: string) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
-  addProblem: (title: string, description: string, bounty: string, tags: string[]) => void;
+  addProblem: (title: string, description: string, bounty: string, tags: string[]) => Promise<void>;
   editProblem: (problemId: string, title: string, description: string, bounty: string, tags: string[]) => Promise<void>;
   manualCloseProblem: (problemId: string) => Promise<void>;
   addSolution: (problemId: string, content: string, file?: File) => Promise<void>;
@@ -44,7 +45,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsub = docRef.onSnapshot(
       (docSnap) => {
         if (docSnap.exists) {
-            setSiteConfig(docSnap.data() as SiteConfig);
+            // Fix: ensure data() is callable via casting
+            setSiteConfig((docSnap as any).data() as SiteConfig);
         }
       },
       (error) => {
@@ -61,7 +63,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const docRef = db.collection("users").doc(firebaseUser.uid);
           const docSnap = await docRef.get();
           if (docSnap.exists) {
-            const userData = { id: firebaseUser.uid, ...docSnap.data() } as User;
+            // Fix: ensure data() is callable via casting
+            const userData = { id: firebaseUser.uid, ...(docSnap as any).data() } as User;
             if (!userData.isBanned) setUser(userData);
             else await auth.signOut();
           }
@@ -79,7 +82,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const unsub = db.collection("users").onSnapshot(
       (snapshot) => {
-        setAllUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
+        // Fix: ensure data() is callable via casting
+        setAllUsers(snapshot.docs.map(doc => ({ id: doc.id, ...(doc as any).data() } as User)));
       },
       (error) => {
         console.warn("Users list listener restricted:", error.message);
@@ -91,14 +95,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const unsub = db.collection("problems").orderBy("createdAt", "desc").onSnapshot(
       (snapshot) => {
-        const problemsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), solutions: [] })) as Problem[];
+        // Fix: ensure data() is callable via casting
+        const problemsData = snapshot.docs.map(doc => ({ id: doc.id, ...(doc as any).data(), solutions: [] })) as Problem[];
         setProblems(problemsData);
         
         problemsData.forEach(p => {
           if (!solutionUnsubscribes.current[p.id]) {
             solutionUnsubscribes.current[p.id] = db.collection("problems").doc(p.id).collection("solutions").onSnapshot(
               (s) => {
-                setProblems(current => current.map(cp => cp.id === p.id ? { ...cp, solutions: s.docs.map(sd => ({ id: sd.id, ...sd.data() } as Solution)) } : cp));
+                // Fix: ensure data() is callable via casting to avoid "expression is not callable" error
+                setProblems(current => current.map(cp => cp.id === p.id ? { ...cp, solutions: s.docs.map(sd => ({ id: sd.id, ...(sd as any).data() } as Solution)) } : cp));
               },
               (err) => {
                 console.warn(`Solutions listener restricted for problem ${p.id}:`, err.message);
@@ -123,7 +129,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const q = db.collection("payments").orderBy("timestamp", "desc");
     const unsub = q.onSnapshot(
       (snap) => {
-        const allPayments = snap.docs.map(d => ({ id: d.id, ...d.data() } as Payment));
+        // Fix: ensure data() is callable via casting
+        const allPayments = snap.docs.map(d => ({ id: d.id, ...(d as any).data() } as Payment));
         if (user.role === UserRole.ADMIN) setPayments(allPayments);
         else setPayments(allPayments.filter(p => p.fromId === user.id || p.toId === user.id));
       },
@@ -150,9 +157,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const logout = () => auth.signOut();
   const resetPassword = (email: string) => auth.sendPasswordResetEmail(email);
 
+  // Fix: addProblem type mismatch resolved and Gemini refinement integrated.
   const addProblem = async (title: string, description: string, bounty: string, tags: string[]) => {
     if (!user || user.role !== UserRole.COMPANY) return;
-    await db.collection("problems").add({ companyId: user.id, companyName: user.companyName, title, description, bounty, status: 'OPEN', createdAt: new Date().toISOString(), tags });
+    const refinedDescription = await refineProblemDescription(description);
+    await (db.collection("problems") as any).add({ 
+      companyId: user.id, 
+      companyName: user.companyName, 
+      title, 
+      description: refinedDescription, 
+      bounty, 
+      status: 'OPEN', 
+      createdAt: new Date().toISOString(), 
+      tags 
+    });
   };
 
   const editProblem = async (id: string, title: string, description: string, bounty: string, tags: string[]) => {

@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { Problem, Solution, User } from '../types';
+import { Problem, Solution, User } from '../types.ts';
 import { X, Briefcase, IndianRupee, Tag, Clock, Users, CheckCircle2, Download, Terminal, CalendarDays, BookOpenText } from 'lucide-react';
-import ProfileCard from './ProfileCard';
-import { useStore } from '../context/Store';
+import ProfileCard from './ProfileCard.tsx';
+import { useStore } from '../context/Store.tsx';
 
 interface ProblemDetailModalProps {
   isOpen: boolean;

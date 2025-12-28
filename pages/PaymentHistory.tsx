@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useStore } from '../context/Store';
-import { UserRole } from '../types';
+import { useStore } from '../context/Store.tsx';
+import { UserRole } from '../types.ts';
 import { IndianRupee, ArrowUpRight, ArrowDownLeft, Clock, Search, Filter, Calendar, Briefcase, Lock, Sparkles, ShieldCheck } from 'lucide-react';
 
 const PaymentHistory: React.FC = () => {

@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../context/Store';
-import { UserRole } from '../types';
+import { useStore } from '../context/Store.tsx';
+import { UserRole } from '../types.ts';
 import { UserCircle, Edit2, Globe } from 'lucide-react';
-import Modal from './Modal';
+import Modal from './Modal.tsx';
 
 interface ProfileEditModalProps {
     isOpen: boolean;

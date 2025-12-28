@@ -1,54 +1,72 @@
 
-import { GoogleGenAI } from "@google/genai";
-
-// Initialize the GoogleGenAI client with the mandatory API key from process.env.API_KEY
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { GoogleGenAI, Type } from "@google/genai";
 
 /**
- * Refines a problem description to be more technical and clear.
+ * Service to handle AI-powered features using the Google Gemini API.
  */
+
+// Refines a raw problem description into a more professional and clear technical brief.
 export const refineProblemDescription = async (rawDescription: string): Promise<string> => {
+  // Always initialize inside the function to ensure the shim 'process.env' is available
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.warn("Gemini API Key missing. Skipping refinement.");
+    return rawDescription;
+  }
+
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Rewrite this problem description to be professional and technical for CS students: "${rawDescription}"`,
+      contents: `Please refine and improve the following technical problem description for a professional bounty platform. 
+      Make it clearer, more structured, and technically precise while maintaining all original requirements:
+      
+      "${rawDescription}"`,
       config: {
-        systemInstruction: "You are a Senior Technical Project Manager at a top tech company."
+        systemInstruction: "You are a world-class senior engineering manager. You specialize in writing clear, professional problem statements."
       }
     });
-    // Use .text property directly as per the extracted string output guidelines
+    
     return response.text || rawDescription;
   } catch (error) {
-    console.error("Gemini refinement failed:", error);
+    console.error("Gemini refinement error:", error);
     return rawDescription;
   }
 };
 
-/**
- * Fetches real-time industry insights and tech roadblocks using Google Search grounding.
- */
+// Fetches live trending engineering insights.
 export const getLiveInsights = async (): Promise<string[]> => {
+  const apiKey = process.env.API_KEY;
+  const fallbackInsights = [
+    "Optimizing Large Language Model latency for edge devices",
+    "Scaling distributed databases for real-time analytics",
+    "Securing cross-origin authentication in zero-trust architectures",
+    "Refactoring legacy monoliths to serverless microservices",
+    "Implementing robust encryption for sensitive data",
+    "Reducing memory overhead in high-frequency systems",
+    "Automating Kubernetes cluster management with operators"
+  ];
+
+  if (!apiKey) return fallbackInsights;
+
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: "What are 5 trending technical challenges or bugs reported by major tech companies in the last 7 days? Provide a list of short headlines.",
+      contents: "Generate 7 trending software engineering industry headlines. Return as a JSON array of strings only.",
       config: {
-        tools: [{ googleSearch: {} }]
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        }
       }
     });
     
-    // Simplistic parsing for the list items from the .text property
-    const text = response.text || "";
-    const lines = text.split('\n').filter(l => l.trim().length > 5).map(l => l.replace(/^[0-9.-]*/, '').trim());
-    return lines.length > 0 ? lines : [
-      "Optimizing Large Language Model latency",
-      "Scaling distributed databases for real-time analytics",
-      "Securing cross-origin authentication protocols",
-      "Refactoring legacy monoliths to serverless microservices",
-      "Implementing zero-trust architecture in hybrid clouds"
-    ];
+    const text = response.text || "[]";
+    return JSON.parse(text.trim());
   } catch (error) {
-    console.error("Failed to fetch live insights:", error);
-    return ["Protocol active. System status: OPTIMAL."];
+    console.error("Gemini insights error:", error);
+    return fallbackInsights;
   }
 };

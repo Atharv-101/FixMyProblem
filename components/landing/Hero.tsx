@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Terminal, MoveRight, Star, Zap, Activity, ShieldCheck, ArrowRight } from 'lucide-react';
-import { UserRole } from '../../types';
-import { getLiveInsights } from '../../services/geminiService';
+import { Terminal, MoveRight, Star, Zap, Activity, IndianRupee, ArrowRight } from 'lucide-react';
+import { UserRole } from '../../types.ts';
+import { getLiveInsights } from '../../services/geminiService.ts';
 
 interface HeroProps {
   onLoginClick: (role: UserRole) => void;
@@ -32,7 +32,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
 
   return (
     <section className="relative min-h-[90vh] lg:min-h-screen pt-44 pb-16 px-4 md:px-10 overflow-hidden flex items-center bg-transparent">
-      {/* Dynamic Background Elements - Optimized for performance */}
+      {/* Dynamic Background Elements */}
       <div 
         className="absolute top-1/4 left-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-coral/10 rounded-full blur-[100px] pointer-events-none transition-transform duration-1000 ease-out hidden sm:block"
         style={{ transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0)` }}
@@ -101,7 +101,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
           </div>
         </div>
 
-        {/* Right Content - Visual Workspace */}
+        {/* Right Content */}
         <div className="relative h-[450px] lg:h-[700px] w-full flex items-center justify-center group">
           <div 
             className="relative w-full h-full max-w-sm lg:max-w-md transition-transform duration-700 ease-out preserve-3d scale-[0.85] lg:scale-100"
@@ -146,7 +146,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
                </div>
             </div>
 
-            {/* Floating Terminal - Hidden on small mobile */}
+            {/* Floating Terminal */}
             <div 
               className="absolute bottom-6 -right-4 w-60 bg-black text-citrus tactile-card p-6 rounded-[2rem] rotate-[4deg] z-40 hidden sm:block animate-float [animation-delay:2s]"
             >
@@ -164,16 +164,18 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
         </div>
       </div>
 
-      {/* Ticker Section - Optimized for mobile overflow */}
+      {/* Ticker Section */}
       <div className="absolute bottom-0 left-0 w-full py-3 bg-black border-t-2 border-black overflow-hidden whitespace-nowrap z-20">
          <div className="inline-block animate-[scroll_45s_linear_infinite] uppercase text-[9px] lg:text-[10px] font-black tracking-[0.3em] text-white">
-            {liveInsights.length > 0 ? liveInsights.map((insight, i) => (
+            {liveInsights.map((insight, i) => (
               <span key={i} className="mx-8 lg:mx-12">
                 <span className="text-citrus">Live Insight:</span> {insight} • 
               </span>
-            )) : [1,2,3,4].map(i => (
-              <span key={i} className="mx-8 lg:mx-12">
-                <span className="text-citrus">System:</span> Syncing live grid roadblocks... • 
+            ))}
+            {/* Duplicated for smooth loop */}
+            {liveInsights.map((insight, i) => (
+              <span key={`dup-${i}`} className="mx-8 lg:mx-12">
+                <span className="text-citrus">Live Insight:</span> {insight} • 
               </span>
             ))}
          </div>

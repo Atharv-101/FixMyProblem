@@ -1,11 +1,9 @@
-// FIX: Switched to firebase/compat imports to support the v8 namespaced API (e.g., firebase.auth()) with a newer Firebase SDK version.
+
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
 import "firebase/compat/firestore";
 import "firebase/compat/storage";
 
-// Configuration uses environment variables. 
-// In a real deployment, ensure these are set in your CI/CD or .env file.
 const firebaseConfig = {
   apiKey: "AIzaSyAFd9JmHS1VOoA7B6ehvSAMJqbQRKuBYBg",
   authDomain: "trymyproblem.firebaseapp.com",
@@ -16,12 +14,17 @@ const firebaseConfig = {
   measurementId: "G-80K1XVWDCF"
 };
 
-// Initialize Firebase only if it hasn't been initialized yet
+// Singleton initialization pattern for compatible environments
+let app;
 if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+  app = firebase.initializeApp(firebaseConfig);
+} else {
+  app = firebase.app();
 }
 
-export const auth = firebase.auth();
-export const db = firebase.firestore();
-export const storage = firebase.storage();
+// Explicitly derive and export services from the singleton app instance
+export const auth = app.auth();
+export const db = app.firestore();
+export const storage = app.storage();
+
 export default firebase;

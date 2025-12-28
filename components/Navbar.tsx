@@ -29,7 +29,7 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
     setIsMobileMenuOpen(false);
   };
 
-  const navClasses = `fixed top-0 w-full z-50 transition-all duration-300 ${
+  const navClasses = `fixed top-0 w-full z-[100] transition-all duration-300 ${
     isMobileMenuOpen 
       ? 'h-screen bg-paper' 
       : (scrolled || !transparent ? 'bg-paper/95 backdrop-blur-xl border-b-[3px] border-black py-4' : 'bg-transparent py-8')
@@ -40,7 +40,7 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
       <div className="max-w-7xl mx-auto px-6 md:px-10 h-full flex flex-col justify-center">
         <div className="flex justify-between items-center">
           <div 
-            className="flex items-center cursor-pointer group relative z-[60]" 
+            className="flex items-center cursor-pointer group relative z-[110]" 
             onClick={() => handleMobileNav('HOME')}
           >
             <div className="rounded-xl p-2 md:p-2.5 mr-3 bg-black border-2 border-citrus shadow-[3px_3px_0px_0px_rgba(255,95,95,1)] group-hover:rotate-6 transition-all duration-300">
@@ -98,7 +98,7 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
             )}
           </div>
 
-          <div className="md:hidden flex items-center relative z-[60]">
+          <div className="md:hidden flex items-center relative z-[110]">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
               className={`p-2.5 rounded-xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(253,224,71,1)] transition-all ${isMobileMenuOpen ? 'bg-coral text-white' : 'bg-black text-white'}`}
@@ -109,14 +109,14 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-50 pt-24 pb-12 px-8 bg-paper flex flex-col">
-            <div className="space-y-8 mt-12">
+          <div className="md:hidden fixed inset-0 z-[100] pt-24 pb-12 px-8 bg-paper/95 backdrop-blur-xl flex flex-col overflow-y-auto">
+            <div className="space-y-6 mt-12 flex flex-col items-center">
               {!user ? (
                 <>
-                  <button onClick={() => handleMobileNav('HOME')} className="block text-4xl font-black text-black tracking-tighter">Directory</button>
-                  <button onClick={() => handleMobileNav('LEADERBOARD')} className="block text-4xl font-black text-black tracking-tighter">Solvers</button>
-                  <button onClick={() => handleMobileNav('CONTACT')} className="block text-4xl font-black text-black tracking-tighter">Support</button>
-                  <div className="pt-8">
+                  <button onClick={() => handleMobileNav('HOME')} className="text-4xl font-black text-black tracking-tighter py-4">Home</button>
+                  <button onClick={() => handleMobileNav('LEADERBOARD')} className="text-4xl font-black text-black tracking-tighter py-4">Solvers</button>
+                  <button onClick={() => handleMobileNav('CONTACT')} className="text-4xl font-black text-black tracking-tighter py-4">Support</button>
+                  <div className="pt-8 w-full">
                     <button 
                       onClick={() => handleMobileNav('AUTH')} 
                       className="tactile-btn w-full py-6 bg-black text-white rounded-2xl font-black text-xl uppercase"
@@ -127,7 +127,7 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
                 </>
               ) : (
                 <>
-                  <div className="flex items-center gap-5 p-6 bg-white border-2 border-black rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-5 p-6 bg-white border-2 border-black rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm">
                      <div className="w-16 h-16 rounded-2xl bg-citrus border-2 border-black flex items-center justify-center font-black text-2xl">
                         {user.name ? user.name.charAt(0) : 'U'}
                      </div>
@@ -136,9 +136,9 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
                         <p className="text-[10px] font-black uppercase text-coral mt-1">{user.role}</p>
                      </div>
                   </div>
-                  <button onClick={() => handleMobileNav('DASHBOARD')} className="block text-4xl font-black text-black tracking-tighter">Workspace</button>
-                  <button onClick={() => handleMobileNav('PAYMENT_HISTORY')} className="block text-4xl font-black text-black tracking-tighter">Payouts</button>
-                  <div className="mt-8">
+                  <button onClick={() => handleMobileNav('DASHBOARD')} className="text-4xl font-black text-black tracking-tighter py-4">Workspace</button>
+                  <button onClick={() => handleMobileNav('PAYMENT_HISTORY')} className="text-4xl font-black text-black tracking-tighter py-4">Payouts</button>
+                  <div className="mt-8 w-full">
                     <button 
                       onClick={logout} 
                       className="tactile-btn w-full py-5 bg-white text-black border-2 border-black rounded-2xl font-black text-xl"

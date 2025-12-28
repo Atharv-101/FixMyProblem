@@ -1,15 +1,15 @@
-import React, { useState } from 'react'; // Import useState
-import { useStore } from '../context/Store';
-import { UserRole, User } from '../types';
+
+import React, { useState } from 'react';
+import { useStore } from '../context/Store.tsx';
+import { UserRole, User } from '../types.ts';
 import { Trophy, Star } from 'lucide-react';
-import ProfileCard from '../components/ProfileCard'; // Import ProfileCard
+import ProfileCard from '../components/ProfileCard.tsx';
 
 const Leaderboard: React.FC = () => {
   const { allUsers } = useStore();
   const students = allUsers.filter(u => u.role === UserRole.STUDENT).sort((a, b) => (b.rating || 0) - (a.rating || 0));
   
-  // Profile Card hover states
-  const [showProfileCard, setShowProfileCard] = useState<string | null>(null); // Stores userId for hovered profile
+  const [showProfileCard, setShowProfileCard] = useState<string | null>(null);
   const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
   const handleProfileHover = (user: User) => {
