@@ -1,21 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppProvider, useStore } from './context/Store';
-import { UserRole } from './types';
+import { AppProvider, useStore } from './context/Store.tsx';
+import { UserRole } from './types.ts';
 import { Loader2 } from 'lucide-react';
 
-import Navbar from './components/Navbar';
-import ScrollToTopButton from './components/ScrollToTopButton';
+import Navbar from './components/Navbar.tsx';
+import ScrollToTopButton from './components/ScrollToTopButton.tsx';
 
-import LandingPage from './pages/LandingPage';
-import AuthPage from './pages/AuthPage';
-import AdminPortal from './pages/AdminPortal';
-import StudentPortal from './pages/StudentPortal';
-import CompanyPortal from './pages/CompanyPortal';
-import LegalPage from './pages/LegalPage';
-import ContactPage from './pages/ContactPage';
-import Leaderboard from './pages/Leaderboard';
-import PaymentHistory from './pages/PaymentHistory';
+import LandingPage from './pages/LandingPage.tsx';
+import AuthPage from './pages/AuthPage.tsx';
+import AdminPortal from './pages/AdminPortal.tsx';
+import StudentPortal from './pages/StudentPortal.tsx';
+import CompanyPortal from './pages/CompanyPortal.tsx';
+import LegalPage from './pages/LegalPage.tsx';
+import ContactPage from './pages/ContactPage.tsx';
+import Leaderboard from './pages/Leaderboard.tsx';
+import PaymentHistory from './pages/PaymentHistory.tsx';
 
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY';
 
@@ -24,7 +24,6 @@ const FixMyProblemApp: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
   const [authRole, setAuthRole] = useState<UserRole>(UserRole.STUDENT);
 
-  // Toggle landing page specific features like the emoji cursor
   useEffect(() => {
     if (view === 'HOME' && !user) {
       document.body.classList.add('landing-active');

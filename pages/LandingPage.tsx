@@ -1,26 +1,26 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useStore } from '../context/Store';
-import { UserRole, Problem, User } from '../types';
+import { useStore } from '../context/Store.tsx';
+import { UserRole, Problem, User } from '../types.ts';
 
-import Navbar from '../components/Navbar';
-import ProblemDetailModal from '../components/ProblemDetailModal';
-import ProfileCard from '../components/ProfileCard';
+import Navbar from '../components/Navbar.tsx';
+import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
+import ProfileCard from '../components/ProfileCard.tsx';
 
 // Modular Sections
-import Hero from '../components/landing/Hero';
-import About from '../components/landing/About';
-import Offerings from '../components/landing/Offerings';
-import HowItWorks from '../components/landing/HowItWorks';
-import Features from '../components/landing/Features';
-import ImpactStories from '../components/landing/ImpactStories';
-import Leadership from '../components/landing/Leadership';
-import LiveFeed from '../components/landing/LiveFeed';
-import LeaderboardSnippet from '../components/landing/LeaderboardSnippet';
-import Testimonials from '../components/landing/Testimonials';
-import FAQ from '../components/landing/FAQ';
-import CTA from '../components/landing/CTA';
-import LandingFooter from '../components/landing/LandingFooter';
+import Hero from '../components/landing/Hero.tsx';
+import About from '../components/landing/About.tsx';
+import Offerings from '../components/landing/Offerings.tsx';
+import HowItWorks from '../components/landing/HowItWorks.tsx';
+import Features from '../components/landing/Features.tsx';
+import ImpactStories from '../components/landing/ImpactStories.tsx';
+import Leadership from '../components/landing/Leadership.tsx';
+import LiveFeed from '../components/landing/LiveFeed.tsx';
+import LeaderboardSnippet from '../components/landing/LeaderboardSnippet.tsx';
+import Testimonials from '../components/landing/Testimonials.tsx';
+import FAQ from '../components/landing/FAQ.tsx';
+import CTA from '../components/landing/CTA.tsx';
+import LandingFooter from '../components/landing/LandingFooter.tsx';
 
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD';
 
@@ -35,7 +35,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
 
-  // Profile Card hover states
   const [showProfileCard, setShowProfileCard] = useState<string | null>(null);
   const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 

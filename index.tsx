@@ -1,7 +1,7 @@
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
-import { createRoot } from 'react-dom/client'; // Corrected import
-import App from './App';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
 
 interface Props {
   children?: ReactNode;
@@ -60,7 +60,7 @@ if (!rootElement) {
 }
 
 try {
-  const root = createRoot(rootElement); // Corrected usage
+  const root = createRoot(rootElement);
   root.render(
     <React.StrictMode>
       <ErrorBoundary>
@@ -70,7 +70,6 @@ try {
   );
 } catch (e) {
   console.error("Failed to mount application:", e);
-  // Fallback to manual DOM manipulation to show error if React fails completely
   rootElement.innerHTML = `
     <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #111; color: white; font-family: sans-serif;">
       <div style="max-width: 500px; padding: 2rem; background: #222; border-radius: 8px; border-left: 4px solid #ef4444;">

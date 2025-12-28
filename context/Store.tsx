@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment } from '../types';
-import { auth, db } from '../services/firebase';
-import { supabase } from '../services/supabase';
+import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment } from '../types.ts';
+import { auth, db } from '../services/firebase.ts';
+import { supabase } from '../services/supabase.ts';
 
 interface AppContextType {
   user: User | null;
