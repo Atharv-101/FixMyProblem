@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { useStore } from '../context/Store';
-import { UserRole } from '../types';
+import { useStore } from '../context/Store.tsx';
+import { UserRole } from '../types.ts';
 import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Zap, Terminal, Shield, Lock, Cpu, ArrowRight, Sparkles } from 'lucide-react';
 
 interface AuthPageProps {
@@ -58,7 +58,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-paper p-6 relative overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-10 left-10 opacity-5 animate-float">
         <Cpu className="w-64 h-64" />
       </div>
@@ -66,7 +65,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
         <Terminal className="w-64 h-64" />
       </div>
 
-      {/* Back Button */}
       <button 
         onClick={onBack}
         className="fixed top-8 left-8 z-50 flex items-center gap-3 px-6 py-3 bg-white border-2 border-black font-black text-xs uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group"
@@ -76,7 +74,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
       </button>
 
       <div className="w-full max-w-lg relative reveal">
-        {/* Main Auth Card */}
         <div className="tactile-card bg-white p-10 md:p-14 rounded-[3rem] relative overflow-visible">
           <div className="sticker-tape"></div>
           
@@ -93,7 +90,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
              </p>
           </div>
 
-          {/* Success/Error Alerts */}
           {message && (
              <div className="bg-forest text-white p-4 rounded-xl mb-8 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(253,224,71,1)] flex items-center">
                 <CheckCircle2 className="w-4 h-4 mr-3 flex-shrink-0" /> {message}
@@ -190,7 +186,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
           )}
         </div>
 
-        {/* Floating Tag */}
         <div className="absolute -bottom-6 -right-6 px-6 py-4 bg-citrus border-2 border-black rounded-2xl font-black text-xs uppercase tracking-widest rotate-6 shadow-lg flex items-center gap-2">
            <Sparkles className="w-4 h-4" /> Secured Protocol
         </div>

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../context/Store';
-import { UserRole } from '../types';
+import { useStore } from '../context/Store.tsx';
+import { UserRole } from '../types.ts';
 import { LogOut, Code2, Menu, X, ArrowRight, Zap } from 'lucide-react';
-import ProfileCard from './ProfileCard';
+import ProfileCard from './ProfileCard.tsx';
 
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY';
 
@@ -39,7 +39,6 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
     <nav className={navClasses}>
       <div className="max-w-7xl mx-auto px-6 md:px-10 h-full flex flex-col justify-center">
         <div className="flex justify-between items-center">
-          {/* Logo - Refactored to prevent any text doubling or overlap glitches */}
           <div 
             className="flex items-center cursor-pointer group relative z-[60]" 
             onClick={() => handleMobileNav('HOME')}
@@ -52,7 +51,6 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
             </span>
           </div>
           
-          {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8 lg:space-x-12">
             {user ? (
               <div className="flex items-center space-x-6 relative">
@@ -100,7 +98,6 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
             )}
           </div>
 
-          {/* Mobile Menu Trigger */}
           <div className="md:hidden flex items-center relative z-[60]">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -111,7 +108,6 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent }) => {
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-50 pt-24 pb-12 px-8 bg-paper flex flex-col">
             <div className="space-y-8 mt-12">

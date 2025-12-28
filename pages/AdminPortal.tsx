@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
-import { useStore } from '../context/Store';
-import { UserRole, Problem, User } from '../types';
+import { useStore } from '../context/Store.tsx';
+import { UserRole, Problem, User } from '../types.ts';
 import { Users, CheckCircle2, Star, Trophy, BarChart3, Loader2, ArrowLeft, Shield, Activity, AlertTriangle, Mail, Search, Lock, ChevronRight, Zap, Eye, Download, UploadCloud, FileText, Phone, Scale, Terminal, Cpu, Globe, ArrowUpRight, Settings, Trash2, Ban, Edit2, UserCircle, Camera, Award, IndianRupee, Sparkles, XCircle, Power, MapPin, Briefcase } from 'lucide-react';
-import ProblemDetailModal from '../components/ProblemDetailModal';
-import ProfileCard from '../components/ProfileCard';
+import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
+import ProfileCard from '../components/ProfileCard.tsx';
 
 const AdminPortal: React.FC = () => {
   const { allUsers, problems, siteConfig, updateSiteConfig, adminDeleteUser, adminDeleteProblem, adminBanUser } = useStore();
