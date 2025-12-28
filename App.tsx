@@ -24,13 +24,22 @@ const FixMyProblemApp: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
   const [authRole, setAuthRole] = useState<UserRole>(UserRole.STUDENT);
 
+  // Toggle landing page specific features like the emoji cursor
+  useEffect(() => {
+    if (view === 'HOME' && !user) {
+      document.body.classList.add('landing-active');
+    } else {
+      document.body.classList.remove('landing-active');
+    }
+  }, [view, user]);
+
   useEffect(() => {
     if (user && view === 'AUTH') setView('DASHBOARD');
   }, [user]);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+    <div className="min-h-screen flex items-center justify-center bg-paper">
+        <Loader2 className="w-12 h-12 animate-spin text-coral" />
     </div>
   );
 
@@ -56,7 +65,7 @@ const FixMyProblemApp: React.FC = () => {
   const showGlobalNav = view !== 'HOME' && view !== 'AUTH';
 
   return (
-    <div className="font-sans text-gray-900 bg-gray-50 min-h-screen" style={{ fontSize: `${siteConfig.baseFontSize}px` }}>
+    <div className="font-sans text-black bg-paper min-h-screen" style={{ fontSize: `${siteConfig.baseFontSize}px` }}>
       {showGlobalNav && <Navbar onViewChange={setView} />}
       {currentContent}
       <ScrollToTopButton />
