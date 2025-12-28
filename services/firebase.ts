@@ -14,7 +14,7 @@ const firebaseConfig = {
   measurementId: "G-80K1XVWDCF"
 };
 
-// Singleton initialization pattern for compatible environments
+// Singleton initialization pattern for browser ESM environments
 let app;
 if (!firebase.apps.length) {
   app = firebase.initializeApp(firebaseConfig);

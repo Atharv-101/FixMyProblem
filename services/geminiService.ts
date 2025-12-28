@@ -7,7 +7,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 // Refines a raw problem description into a more professional and clear technical brief.
 export const refineProblemDescription = async (rawDescription: string): Promise<string> => {
-  // Always initialize inside the function to ensure the shim 'process.env' is available
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     console.warn("Gemini API Key missing. Skipping refinement.");
@@ -15,6 +14,7 @@ export const refineProblemDescription = async (rawDescription: string): Promise<
   }
 
   try {
+    // Lazy instantiation within the function call scope
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
