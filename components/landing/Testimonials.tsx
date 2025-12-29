@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MessageSquareText } from 'lucide-react';
 
@@ -25,7 +24,7 @@ const Testimonials: React.FC = () => {
   ];
 
   return (
-    <section className="py-24 px-4 bg-white border-b border-gray-100">
+    <section className="py-24 px-4 bg-white border-b border-gray-100 reveal">
       <div className="max-w-7xl mx-auto text-center">
         <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-gray-900 leading-tight">
           What Our Users Are <span className="text-pink-600">Saying</span>

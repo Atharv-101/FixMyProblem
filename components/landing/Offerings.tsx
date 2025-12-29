@@ -8,13 +8,13 @@ const Offerings: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center">
           
-          <div className="flex-1 space-y-8 lg:space-y-12">
+          <div className="flex-1 space-y-8 lg:space-y-12 reveal-left">
             <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-none mb-8">
               Dual Protocol <br/> <span className="text-citrus">Execution.</span>
             </h2>
             
             <div className="grid sm:grid-cols-2 lg:grid-cols-1 gap-6 lg:gap-10">
-              <div className="group relative p-6 lg:p-8 rounded-2xl lg:rounded-3xl border border-white/10 hover:border-citrus transition-all">
+              <div className="group relative p-6 lg:p-8 rounded-2xl lg:rounded-3xl border border-white/10 hover:border-citrus transition-all reveal-zoom" style={{ transitionDelay: '0.1s' }}>
                 <div className="w-12 lg:w-14 h-12 lg:h-14 bg-citrus rounded-xl lg:rounded-2xl flex items-center justify-center text-black mb-5 group-hover:rotate-6 transition-transform">
                   <GraduationCap className="w-6 lg:w-8 h-6 lg:h-8" />
                 </div>
@@ -28,7 +28,7 @@ const Offerings: React.FC = () => {
                 </div>
               </div>
 
-              <div className="group relative p-6 lg:p-8 rounded-2xl lg:rounded-3xl border border-white/10 hover:border-coral transition-all">
+              <div className="group relative p-6 lg:p-8 rounded-2xl lg:rounded-3xl border border-white/10 hover:border-coral transition-all reveal-zoom" style={{ transitionDelay: '0.3s' }}>
                 <div className="w-12 lg:w-14 h-12 lg:h-14 bg-coral rounded-xl lg:rounded-2xl flex items-center justify-center text-white mb-5 group-hover:-rotate-6 transition-transform">
                   <Building2 className="w-6 lg:w-8 h-6 lg:h-8" />
                 </div>
@@ -44,8 +44,8 @@ const Offerings: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 w-full mt-8 lg:mt-0">
-            <div className="relative aspect-square md:aspect-video lg:aspect-square bg-forest rounded-[2.5rem] lg:rounded-[4rem] p-8 lg:p-12 overflow-hidden border-2 border-white/10">
+          <div className="flex-1 w-full mt-8 lg:mt-0 reveal-right">
+            <div className="relative aspect-square md:aspect-video lg:aspect-square bg-forest rounded-[2.5rem] lg:rounded-[4rem] p-8 lg:p-12 overflow-hidden border-2 border-white/10 reveal-rotate" style={{ transitionDelay: '0.4s' }}>
                <div className="absolute top-0 right-0 w-48 lg:w-64 h-48 lg:h-64 bg-white/5 rounded-full -mr-24 -mt-24"></div>
                <div className="relative z-10 h-full flex flex-col justify-center text-center">
                   <div className="text-7xl sm:text-9xl lg:text-[140px] font-black leading-none text-citrus/20 tracking-tighter mb-2">120+</div>

@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, FileText, Loader2, CheckCircle2, XCircle, Users } from 'lucide-react';
+import { Mail, Phone, MapPin, FileText, Loader2, CheckCircle2, XCircle, Users, Zap, ShieldCheck, Copy, ExternalLink, Send } from 'lucide-react';
 
 const ContactPage: React.FC = () => {
     const [name, setName] = useState('');
@@ -7,142 +8,199 @@ const ContactPage: React.FC = () => {
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+    const [copied, setCopied] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const targetEmail = "athinnnovations05@gmail.com";
+    const targetPhone = "+91 9423109991";
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(targetEmail);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleManualDispatch = () => {
+        const mailtoLink = `mailto:${targetEmail}?subject=${encodeURIComponent(subject || 'Inquiry')}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`)}`;
+        window.open(mailtoLink, '_blank');
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus('submitting');
-        // In a real application, you would send this data to a backend API.
-        // For this demo, we'll just simulate a submission.
-        setTimeout(() => {
-            console.log("Contact form submitted:", { name, email, subject, message });
-            if (Math.random() > 0.1) { // Simulate 90% success rate
+        
+        try {
+            // Using Formspree for real email delivery. 
+            // Note: The user may need to verify their email on Formspree if they haven't used it before.
+            const response = await fetch("https://formspree.io/f/xpwzyvql", { 
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    name, 
+                    email, 
+                    subject, 
+                    message,
+                    _replyto: email,
+                    _subject: `FixMyProblem Grid: ${subject}`
+                })
+            });
+
+            if (response.ok) {
                 setStatus('success');
                 setName(''); setEmail(''); setSubject(''); setMessage('');
             } else {
+                // Fallback to error state which allows manual dispatch
                 setStatus('error');
             }
-        }, 1500);
+        } catch (err) {
+            console.error("Grid Transmission Error:", err);
+            setStatus('error');
+        }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-20 px-4 pb-12">
-            <div className="max-w-5xl mx-auto">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-10 flex items-center justify-center">
-                    <Users className="w-8 h-8 mr-3 text-indigo-600" /> Get in Touch
-                </h1>
-                <p className="text-lg md:text-xl text-gray-600 text-center max-w-2xl mx-auto mb-12">
-                    We're here to help you navigate your journey with FixMyProblem. Whether it's a query about challenges, solutions, or a partnership opportunity, reach out to us!
-                </p>
+        <div className="min-h-screen bg-paper pt-32 px-4 md:px-10 pb-20 relative overflow-hidden">
+            {/* Background Decoration */}
+            <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
+                <Mail className="w-[500px] h-[500px]" />
+            </div>
+
+            <div className="max-w-6xl mx-auto relative z-10">
+                <div className="text-center mb-16 reveal">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border-2 border-citrus shadow-[4px_4px_0px_0px_rgba(255,95,95,1)] mb-6">
+                        <Zap className="w-3.5 h-3.5 text-citrus fill-citrus" />
+                        Communication Protocol Active
+                    </div>
+                    <h1 className="text-5xl md:text-8xl font-black text-black tracking-tighter leading-none italic underline decoration-citrus decoration-8 underline-offset-8">
+                        Get in Touch.
+                    </h1>
+                    <p className="mt-10 text-xl md:text-2xl font-bold text-gray-500 max-w-2xl mx-auto">
+                        Bridge the gap. Reach out to the <span className="text-black">ATHinnovations</span> core team for high-stakes technical inquiries.
+                    </p>
+                </div>
                 
-                <div className="grid md:grid-cols-2 gap-12">
-                    {/* Contact Information */}
-                    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                            <Phone className="w-6 h-6 mr-3 text-blue-600" /> Our Details
-                        </h2>
-                        <div className="space-y-6 text-gray-700">
-                            <div className="flex items-center text-sm md:text-base">
-                                <Mail className="w-5 h-5 mr-4 text-gray-500" aria-hidden="true" />
-                                <span className="font-semibold">General Inquiries:</span> <a href="mailto:info@fixmyproblem.com" className="ml-2 text-blue-600 hover:underline">info@fixmyproblem.com</a>
+                <div className="grid lg:grid-cols-5 gap-10">
+                    {/* Contact Information Sidebar */}
+                    <div className="lg:col-span-2 space-y-8 reveal-left">
+                        <div className="tactile-card p-10 bg-black text-white rounded-[3rem] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <ShieldCheck className="w-32 h-32" />
                             </div>
-                            <div className="flex items-center text-sm md:text-base">
-                                <Mail className="w-5 h-5 mr-4 text-gray-500" aria-hidden="true" />
-                                <span className="font-semibold">Support:</span> <a href="mailto:support@fixmyproblem.com" className="ml-2 text-blue-600 hover:underline">support@fixmyproblem.com</a>
-                            </div>
-                            <div className="flex items-center text-sm md:text-base">
-                                <Phone className="w-5 h-5 mr-4 text-gray-500" aria-hidden="true" />
-                                <span className="font-semibold">Phone:</span> <a href="tel:+11234567890" className="ml-2 text-blue-600 hover:underline">+1 (123) 456-7890</a>
-                            </div>
-                            <div className="flex items-start text-sm md:text-base">
-                                <MapPin className="w-5 h-5 mr-4 mt-1 text-gray-500 flex-shrink-0" aria-hidden="true" />
-                                <div>
-                                    <span className="font-semibold block">Headquarters:</span> 
-                                    <p className="ml-0 mt-1">123 Innovation Drive,<br/>Tech Hub City, TL 90210, Country</p>
+                            <h2 className="text-2xl font-black tracking-tighter mb-8 flex items-center gap-3 relative z-10">
+                                <Phone className="w-6 h-6 text-citrus" /> Core Intel
+                            </h2>
+                            <div className="space-y-8 relative z-10">
+                                <div className="space-y-2 group">
+                                    <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">General Enquiries</p>
+                                    <div className="flex items-center gap-3">
+                                        <a href={`mailto:${targetEmail}`} className="text-lg font-bold text-citrus hover:underline decoration-2 underline-offset-4 block truncate">
+                                            {targetEmail}
+                                        </a>
+                                        <button onClick={copyToClipboard} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+                                            {copied ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Protocol Hotline</p>
+                                    <a href={`tel:${targetPhone.replace(/\s+/g, '')}`} className="text-lg font-bold text-white hover:text-citrus transition-colors block truncate">
+                                        {targetPhone}
+                                    </a>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Global HQ</p>
+                                    <p className="text-sm font-bold leading-relaxed text-gray-300">
+                                        ATHinnovations Command Center<br/>
+                                        Innovation Hub, Nashik<br/>
+                                        Maharashtra, IN
+                                    </p>
                                 </div>
                             </div>
-                            <div className="pt-6 border-t border-gray-100 mt-6">
-                                <p className="text-xs md:text-sm text-gray-500">
-                                    Our dedicated team is available to assist you during business hours, Monday to Friday, 9 AM to 5 PM (local time).
-                                </p>
-                            </div>
+                        </div>
+
+                        <div className="tactile-card p-8 bg-citrus/10 border-2 border-black rounded-[2rem]">
+                            <h4 className="font-black text-lg mb-2 uppercase tracking-tighter">Direct Extraction</h4>
+                            <p className="text-xs font-bold text-gray-500 leading-relaxed italic mb-4">
+                                Need an immediate bypass? Use our direct manual override to open your local mail client. 😁
+                            </p>
+                            <button onClick={handleManualDispatch} className="w-full py-3 bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-forest transition-colors">
+                                <ExternalLink className="w-4 h-4" /> Manual Override
+                            </button>
                         </div>
                     </div>
 
                     {/* Contact Form */}
-                    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                            <FileText className="w-6 h-6 mr-3 text-green-600" /> Send Us a Message
-                        </h2>
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-1">Your Name</label>
-                                <input 
-                                    type="text" 
-                                    id="name" 
-                                    required 
-                                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                                    value={name} 
-                                    onChange={e => setName(e.target.value)} 
-                                    aria-label="Your Name"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-1">Your Email</label>
-                                <input 
-                                    type="email" 
-                                    id="email" 
-                                    required 
-                                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                                    value={email} 
-                                    onChange={e => setEmail(e.target.value)} 
-                                    aria-label="Your Email Address"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="subject" className="block text-sm font-bold text-gray-700 mb-1">Subject</label>
-                                <input 
-                                    type="text" 
-                                    id="subject" 
-                                    required 
-                                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                                    value={subject} 
-                                    onChange={e => setSubject(e.target.value)} 
-                                    aria-label="Subject of your message"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="message" className="block text-sm font-bold text-gray-700 mb-1">Message</label>
-                                <textarea 
-                                    id="message" 
-                                    rows={5} 
-                                    required 
-                                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-y"
-                                    value={message} 
-                                    onChange={e => setMessage(e.target.value)} 
-                                    aria-label="Your Message"
-                                />
-                            </div>
-                            <button 
-                                type="submit" 
-                                disabled={status === 'submitting'}
-                                className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
-                                aria-live="polite"
-                            >
-                                {status === 'submitting' ? <Loader2 className="w-5 h-5 animate-spin mr-2" aria-hidden="true" /> : <Mail className="w-5 h-5 mr-2" aria-hidden="true" />}
-                                {status === 'submitting' ? 'Sending...' : 'Send Message'}
-                            </button>
+                    <div className="lg:col-span-3 reveal-right">
+                        <div className="tactile-card bg-white p-8 md:p-12 rounded-[3rem] border-2 border-black">
+                            <h2 className="text-2xl md:text-3xl font-black text-black tracking-tighter mb-8 flex items-center gap-3">
+                                <FileText className="w-8 h-8 text-coral" /> Dispatch Message
+                            </h2>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label htmlFor="name" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Your Identity</label>
+                                        <input 
+                                            type="text" id="name" name="name" required 
+                                            className="w-full bg-paper border-2 border-black rounded-xl px-5 py-4 text-black font-bold focus:bg-citrus/5 outline-none transition-all"
+                                            value={name} onChange={e => setName(e.target.value)} 
+                                            placeholder="Alex Murphy"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label htmlFor="email" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Digital Mail</label>
+                                        <input 
+                                            type="email" id="email" name="email" required 
+                                            className="w-full bg-paper border-2 border-black rounded-xl px-5 py-4 text-black font-bold focus:bg-citrus/5 outline-none transition-all"
+                                            value={email} onChange={e => setEmail(e.target.value)} 
+                                            placeholder="user@grid.com"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="subject" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Topic Header</label>
+                                    <input 
+                                        type="text" id="subject" name="subject" required 
+                                        className="w-full bg-paper border-2 border-black rounded-xl px-5 py-4 text-black font-bold focus:bg-citrus/5 outline-none transition-all"
+                                        value={subject} onChange={e => setSubject(e.target.value)} 
+                                        placeholder="Partnership Opportunity"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="message" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Communication Brief</label>
+                                    <textarea 
+                                        id="message" name="message" rows={6} required 
+                                        className="w-full bg-paper border-2 border-black rounded-xl px-5 py-4 text-black font-bold focus:bg-citrus/5 outline-none transition-all resize-none"
+                                        value={message} onChange={e => setMessage(e.target.value)} 
+                                        placeholder="Transmission details..."
+                                    />
+                                </div>
+                                
+                                <div className="flex flex-col gap-4">
+                                    <button 
+                                        type="submit" 
+                                        disabled={status === 'submitting'}
+                                        className="tactile-btn w-full bg-black text-white py-5 rounded-2xl font-black text-xl uppercase tracking-widest flex items-center justify-center gap-4 transition-all hover:bg-forest disabled:opacity-50"
+                                    >
+                                        {status === 'submitting' ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Send className="w-6 h-6" /> Deploy Transmission</>}
+                                    </button>
 
-                            {status === 'success' && (
-                                <div className="mt-4 bg-green-100 text-green-700 p-3 rounded-lg flex items-center text-sm" role="alert">
-                                    <CheckCircle2 className="w-5 h-5 mr-2" aria-hidden="true" /> Message sent successfully! We'll get back to you soon.
+                                    {status === 'success' && (
+                                        <div className="bg-forest/10 text-forest p-4 rounded-xl border-2 border-forest flex items-center text-[10px] font-black uppercase tracking-widest animate-pop">
+                                            <CheckCircle2 className="w-5 h-5 mr-3" /> Grid synchronized. Message received at {targetEmail}. 🪄
+                                        </div>
+                                    )}
+                                    {status === 'error' && (
+                                        <div className="bg-coral/10 text-coral p-4 rounded-xl border-2 border-coral flex flex-col gap-3 animate-pop">
+                                            <div className="flex items-center text-[10px] font-black uppercase tracking-widest">
+                                                <XCircle className="w-5 h-5 mr-3" /> Signal lost via automated portal. 
+                                            </div>
+                                            <button type="button" onClick={handleManualDispatch} className="text-[9px] font-black uppercase bg-black text-white p-2 rounded-lg hover:bg-coral transition-colors flex items-center justify-center gap-2">
+                                                <ExternalLink className="w-3 h-3" /> Use Manual Dispatch Override
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                            {status === 'error' && (
-                                <div className="mt-4 bg-red-100 text-red-700 p-3 rounded-lg flex items-center text-sm" role="alert">
-                                    <XCircle className="w-5 h-5 mr-2" aria-hidden="true" /> Failed to send message. Please try again later.
-                                </div>
-                            )}
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>

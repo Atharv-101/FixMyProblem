@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Trophy, Star, ArrowUpRight } from 'lucide-react';
 import { User } from '../../types';
@@ -20,7 +19,7 @@ const LeaderboardSnippet: React.FC<LeaderboardSnippetProps> = ({
   onProfileClick
 }) => {
   return (
-    <section className="py-24 px-4 bg-gray-50 border-b border-gray-100">
+    <section className="py-24 px-4 bg-gray-50 border-b border-gray-100 reveal">
         <div className="max-w-7xl mx-auto text-center">
            <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-gray-900 leading-tight">
               Meet Our <span className="text-orange-600">Top Solvers</span>

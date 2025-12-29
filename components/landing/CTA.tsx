@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Terminal, IndianRupee } from 'lucide-react';
 import { UserRole } from '../../types';
@@ -9,12 +8,12 @@ interface CTAProps {
 
 const CTA: React.FC<CTAProps> = ({ onLoginClick }) => {
   return (
-    <section className="py-24 px-4 bg-blue-600 text-center">
+    <section className="py-24 px-4 bg-blue-600 text-center reveal">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-5xl md:text-7xl font-black mb-8 text-white leading-tight">
           Ready to <span className="text-blue-200">Join the Mission</span>?
         </h2>
-        <p className="text-lg md:text-2xl text-blue-50 mb-12 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-lg md:text-2xl text-blue-5 mb-12 max-w-3xl mx-auto leading-relaxed">
           Whether you're looking to solve challenging problems or find innovative solutions, FixMyProblem is your platform.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-6 animate-fade-in-up">

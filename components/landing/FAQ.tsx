@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 
@@ -27,7 +26,7 @@ const FAQ: React.FC = () => {
   ];
 
   return (
-    <section className="py-24 px-4 bg-white border-t border-gray-100">
+    <section className="py-24 px-4 bg-white border-t border-gray-100 reveal">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-extrabold mb-12 text-center text-gray-900 leading-tight">
           Frequently Asked <span className="text-teal-600">Questions</span>

@@ -60,7 +60,7 @@ const Leadership: React.FC = () => {
                
                <div className="flex items-center gap-6 mb-12">
                   <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-3xl bg-black border-4 border-black flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(255,95,95,1)]">
-                     <img src="hhttps://athinnovations.in/images/main-logo.svg$0" alt="ATH" className="w-10 lg:w-12 invert" />
+                     <img src="https://athinnovations.in/images/main-logo.svg" alt="ATH" className="w-10 lg:w-12 invert" />
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-coral mb-1">Parent Entity</p>

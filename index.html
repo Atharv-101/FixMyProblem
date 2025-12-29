@@ -31,6 +31,8 @@
               'pop': 'pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
               'scan': 'scan 3s linear infinite',
               'fade-in': 'fade-in 0.3s ease-out forwards',
+              'spin-slow': 'spin 12s linear infinite',
+              'emoji-pop': 'emoji-pop 0.2s ease-out forwards',
             },
             keyframes: {
               float: {
@@ -45,6 +47,10 @@
                 '0%': { opacity: '0' },
                 '100%': { opacity: '1' },
               },
+              'emoji-pop': {
+                '0%': { transform: 'scale(0.8)' },
+                '100%': { transform: 'scale(1.2)' },
+              },
               scan: { '0%': { top: '-10%' }, '100%': { top: '110%' } }
             }
           }
@@ -54,6 +60,10 @@
     <style>
       :root { --brutalist-border: 2px solid #000; --brutalist-shadow: 4px 4px 0px 0px #000; }
       @media (min-width: 768px) { :root { --brutalist-border: 3px solid #000; --brutalist-shadow: 8px 8px 0px 0px #000; } }
+      
+      /* Force hide cursor everywhere */
+      * { cursor: none !important; }
+      
       html { scroll-behavior: smooth; }
       body {
         background-color: #FDFDFD;
@@ -63,19 +73,45 @@
         overflow-x: hidden;
         -webkit-font-smoothing: antialiased;
       }
+      
+      /* Disable custom cursor on touch devices */
+      @media (hover: none) and (pointer: coarse) {
+        * { cursor: auto !important; }
+        .custom-cursor { display: none !important; }
+      }
+
       .tactile-card {
         border: var(--brutalist-border);
         box-shadow: var(--brutalist-shadow);
         background: #fff;
-        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
       }
-      .tactile-card:hover { transform: translate(-2px, -2px); box-shadow: 10px 10px 0px 0px #000; }
-      .tactile-btn { border: var(--brutalist-border); box-shadow: 4px 4px 0px 0px #000; transition: all 0.1s ease; }
+      /* Added zoom effect on hover for all cards */
+      .tactile-card:hover { 
+        transform: scale(1.02) translate(-2px, -2px); 
+        box-shadow: 12px 12px 0px 0px #000; 
+        z-index: 10;
+      }
+      
+      .tactile-btn { border: var(--brutalist-border); box-shadow: 4px 4px 0px 0px #000; transition: all 0.2s ease; }
+      .tactile-btn:hover { transform: scale(1.05) translate(-2px, -2px); box-shadow: 6px 6px 0px 0px #000; }
       .tactile-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px 0px #000; }
       
-      /* Refined Reveal Logic */
-      .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+      /* Advanced Reveal Logic */
+      .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
       .reveal.active { opacity: 1; transform: translateY(0); }
+      
+      .reveal-zoom { opacity: 0; transform: scale(0.8) translateY(20px); transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      .reveal-zoom.active { opacity: 1; transform: scale(1) translateY(0); }
+
+      .reveal-left { opacity: 0; transform: translateX(-50px); transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+      .reveal-left.active { opacity: 1; transform: translateX(0); }
+
+      .reveal-right { opacity: 0; transform: translateX(50px); transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+      .reveal-right.active { opacity: 1; transform: translateX(0); }
+
+      .reveal-rotate { opacity: 0; transform: rotate(-5deg) translateY(30px); transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      .reveal-rotate.active { opacity: 1; transform: rotate(0) translateY(0); }
 
       .sticker-tape {
         position: absolute;
@@ -116,9 +152,9 @@
               observer.unobserve(entry.target);
             }
           });
-        }, { threshold: 0.1 });
+        }, { threshold: 0.15 });
 
-        document.querySelectorAll('.reveal:not(.active)').forEach(el => observer.observe(el));
+        document.querySelectorAll('[class*="reveal"]:not(.active)').forEach(el => observer.observe(el));
       };
 
       window.initReveals = observeReveals;

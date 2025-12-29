@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Activity, ArrowUpRight, Cpu, IndianRupee, Tag, Clock } from 'lucide-react';
 import { Problem, User } from '../../types';
@@ -23,7 +22,7 @@ const LiveFeed: React.FC<LiveFeedProps> = ({
   onProfileClick
 }) => {
   return (
-    <section className="py-24 px-4 md:px-10 bg-transparent relative border-t-2 border-black">
+    <section className="py-24 px-4 md:px-10 bg-transparent relative border-t-2 border-black reveal">
        <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
              <div className="text-left">

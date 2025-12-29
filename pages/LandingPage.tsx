@@ -22,17 +22,16 @@ import FAQ from '../components/landing/FAQ.tsx';
 import CTA from '../components/landing/CTA.tsx';
 import LandingFooter from '../components/landing/LandingFooter.tsx';
 
-// Updated ViewState to include all possible states from App.tsx
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW';
 
 interface LandingPageProps {
   onLoginClick: (role: UserRole) => void;
-  onViewChange: (view: ViewState) => void;
-  // Added onProfileClick prop to resolve type error
+  onViewChange: (view: any) => void;
   onProfileClick: (id: string) => void;
+  onPageNav: (title: string, category: string) => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, onProfileClick }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, onProfileClick, onPageNav }) => {
   const { problems, allUsers } = useStore();
   const [scrolled, setScrolled] = useState(false);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
@@ -131,7 +130,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
       
       <CTA onLoginClick={onLoginClick} />
       
-      <LandingFooter onLoginClick={onLoginClick} onViewChange={onViewChange} />
+      <LandingFooter onLoginClick={onLoginClick} onViewChange={onViewChange} onPageNav={onPageNav} />
 
       <ProblemDetailModal
         isOpen={showProblemDetailModal}
