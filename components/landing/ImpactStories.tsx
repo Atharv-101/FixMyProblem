@@ -6,21 +6,21 @@ const ImpactStories: React.FC = () => {
   const stories = [
     {
       title: "From Confusion to Clarity",
-      description: "✔ Project submitted on time <br> ✔ Passed final evaluation <br> ✔ Gained confidence to debug independently",
+      description: "✔ Project submitted on time \n ✔ Passed final evaluation \n ✔ Gained confidence to debug independently",
       icon: <LayoutDashboard className="w-8 h-8 text-blue-600" />,
       image: "https://images.pexels.com/photos/5428833/pexels-photo-5428833.jpeg",
       alt: "From Confusion to Clarity"
     },
     {
       title: "Learning Beyond College",
-      description: "✔ Practical skills developed <br> ✔ Industry-ready mindset <br> ✔ Exposure to real workflows",
+      description: "✔ Practical skills developed \n ✔ Industry-ready mindset \n ✔ Exposure to real workflows",
       icon: <Shield className="w-8 h-8 text-green-600" />,
       image: "https://images.pexels.com/photos/3747505/pexels-photo-3747505.jpeg",
       alt: "Learning Beyond College"
     },
     {
       title: "Enhancing User Engagement for Giant",
-      description: "✔ MVP built in weeks <br> ✔ Clear technical roadmap <br>✔ Reduced development cost",
+      description: "✔ MVP built in weeks \n ✔ Clear technical roadmap \n ✔ Reduced development cost",
       icon: <Users className="w-8 h-8 text-purple-600" />,
       image: "https://images.pexels.com/photos/12935040/pexels-photo-12935040.jpeg",
       alt: "User Engagement Enhancement"
