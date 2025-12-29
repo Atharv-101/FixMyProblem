@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment } from '../types.ts';
 import { auth, db } from '../services/firebase.ts';
@@ -127,7 +126,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     return () => {
       unsub();
-      Object.values(solutionUnsubscribes.current).forEach(un => un());
+      // Fix: Line 130 - Explicitly cast to any to avoid "Type {} has no call signatures" error with Object.values iteration
+      Object.values(solutionUnsubscribes.current).forEach((un: any) => {
+        if (typeof un === 'function') un();
+      });
       solutionUnsubscribes.current = {};
     };
   }, [user?.id]);

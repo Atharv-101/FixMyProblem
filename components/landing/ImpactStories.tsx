@@ -5,24 +5,24 @@ import { LayoutDashboard, Shield, Users } from 'lucide-react';
 const ImpactStories: React.FC = () => {
   const stories = [
     {
-      title: "From Confusion to Clarity",
-      description: "✔ Project submitted on time \n ✔ Passed final evaluation \n ✔ Gained confidence to debug independently",
+      title: "Optimizing Supply Chain Logistics for GlobalFlow",
+      description: "A student team developed a machine learning model that reduced GlobalFlow's logistics costs by 15% through route optimization.",
       icon: <LayoutDashboard className="w-8 h-8 text-blue-600" />,
-      image: "https://images.pexels.com/photos/5428833/pexels-photo-5428833.jpeg",
-      alt: "From Confusion to Clarity"
+      image: "https://images.unsplash.com/photo-1628126131338-04a43878b209?q=80&w=2070&auto=format&fit=crop",
+      alt: "Supply Chain Optimization"
     },
     {
-      title: "Learning Beyond College",
-      description: "✔ Practical skills developed \n ✔ Industry-ready mindset \n ✔ Exposure to real workflows",
+      title: "Developing a Secure Microservice for FinTech Innovations",
+      description: "Our student expert designed and implemented a secure, scalable microservice architecture, enhancing FinTech's transaction processing by 20%.",
       icon: <Shield className="w-8 h-8 text-green-600" />,
-      image: "https://images.pexels.com/photos/3747505/pexels-photo-3747505.jpeg",
-      alt: "Learning Beyond College"
+      image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=2070&auto=format&fit=crop",
+      alt: "Secure Microservice Development"
     },
     {
-      title: "Enhancing User Engagement for Giant",
-      description: "✔ MVP built in weeks \n ✔ Clear technical roadmap \n ✔ Reduced development cost",
+      title: "Enhancing User Engagement for E-Commerce Giant PixelMart",
+      description: "Through advanced data analytics, a student helped PixelMart revamp their recommendation engine, leading to a 10% increase in user engagement.",
       icon: <Users className="w-8 h-8 text-purple-600" />,
-      image: "https://images.pexels.com/photos/12935040/pexels-photo-12935040.jpeg",
+      image: "https://images.unsplash.com/photo-1497215729113-d15ee6b0a5a0?q=80&w=2070&auto=format&fit=crop",
       alt: "User Engagement Enhancement"
     }
   ];

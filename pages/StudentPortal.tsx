@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target } from 'lucide-react';
+import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target, ShieldCheck } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
@@ -10,7 +10,6 @@ import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import ProfileCard from '../components/ProfileCard.tsx';
 
 interface StudentPortalProps {
-  // Added onProfileClick prop to resolve type error
   onProfileClick: (id: string) => void;
 }
 
@@ -74,8 +73,13 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                 {/* Header Section */}
                 <div className="mb-10 md:mb-12 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 md:gap-8">
                     <div className="space-y-4 w-full lg:w-auto">
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black text-white rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-black shadow-[3px_3px_0px_0px_rgba(253,224,71,1)]">
-                           <Zap className="w-4 h-4 text-citrus fill-citrus" /> Protocol: Solver Tier Alpha
+                        <div className="flex flex-wrap gap-3">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black text-white rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-black shadow-[3px_3px_0px_0px_rgba(253,224,71,1)]">
+                               <Zap className="w-4 h-4 text-citrus fill-citrus animate-pulse" /> Protocol: Solver Tier Alpha
+                            </div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-forest text-citrus rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest border border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                               <ShieldCheck className="w-4 h-4" /> College Node Verified
+                            </div>
                         </div>
                         <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-black tracking-tighter leading-none">
                            Solver <span className="text-coral italic">Workspace.</span>
@@ -120,7 +124,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                     <Search className="absolute left-5 md:left-6 top-1/2 -translate-y-1/2 h-5 w-5 md:h-6 md:w-6 text-gray-400 group-focus-within:text-coral transition-colors" />
                     <input 
                        type="text" 
-                       placeholder="Scan roadblocks..." 
+                       placeholder="Scan roadblocks by tech stack, keywords or tags..." 
                        className="w-full pl-12 md:pl-16 pr-6 md:pr-8 py-4 md:py-6 rounded-2xl md:rounded-[2rem] border-[3px] md:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-1 focus:translate-y-1 outline-none transition-all text-base md:text-xl font-bold placeholder:text-gray-300" 
                        value={searchQuery} 
                        onChange={e => setSearchQuery(e.target.value)} 

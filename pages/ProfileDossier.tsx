@@ -1,11 +1,11 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, User } from '../types.ts';
 import { 
   ArrowLeft, Terminal, Shield, GraduationCap, Building2, MapPin, 
   Linkedin, Github, Globe, Star, Zap, Briefcase, Calendar, 
-  CheckCircle2, IndianRupee, Activity, Mail
+  CheckCircle2, IndianRupee, Activity, Mail, Loader2, ShieldCheck
 } from 'lucide-react';
 
 interface ProfileDossierProps {
@@ -14,10 +14,39 @@ interface ProfileDossierProps {
 }
 
 const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
-  const { allUsers, problems } = useStore();
-  const profile = allUsers.find(u => u.id === userId);
+  const { allUsers, problems, fetchSingleUser } = useStore();
+  const [profile, setProfile] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  if (!profile) return null;
+  useEffect(() => {
+    const loadProfile = async () => {
+      const local = allUsers.find(u => u.id === userId);
+      if (local) {
+        setProfile(local);
+        setLoading(false);
+      } else {
+        const remote = await fetchSingleUser(userId);
+        setProfile(remote);
+        setLoading(false);
+      }
+    };
+    loadProfile();
+  }, [userId, allUsers, fetchSingleUser]);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-paper">
+      <Loader2 className="w-12 h-12 animate-spin text-coral" />
+    </div>
+  );
+  
+  if (!profile) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-paper p-10 text-center">
+      <Shield className="w-20 h-20 text-gray-200 mb-6" />
+      <h2 className="text-2xl font-black text-black uppercase tracking-tighter">Profile Restricted</h2>
+      <p className="text-gray-400 font-bold mt-2">The requested identity node is not accessible or does not exist.</p>
+      <button onClick={onBack} className="mt-8 tactile-btn px-8 py-3 bg-black text-white rounded-xl font-black text-xs uppercase tracking-widest">Return to Grid</button>
+    </div>
+  );
 
   const isStudent = profile.role === UserRole.STUDENT;
   const companyProblems = problems.filter(p => p.companyId === userId);
@@ -54,9 +83,16 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                    {profile.name.charAt(0)}
                 </div>
                 <h1 className="text-3xl font-black tracking-tighter mb-2">{profile.name}</h1>
-                <span className={`px-4 py-1.5 rounded-full border-2 border-white font-black text-[10px] uppercase tracking-widest ${isStudent ? 'bg-forest text-citrus' : 'bg-coral text-white'}`}>
-                   {profile.role} Protocol
-                </span>
+                <div className="flex flex-col gap-2 items-center">
+                    <span className={`px-4 py-1.5 rounded-full border-2 border-white font-black text-[10px] uppercase tracking-widest ${isStudent ? 'bg-forest text-citrus' : 'bg-coral text-white'}`}>
+                    {profile.role} Protocol
+                    </span>
+                    {isStudent && (
+                        <span className="flex items-center gap-1.5 text-citrus text-[9px] font-black uppercase tracking-widest px-3 py-1 bg-white/10 rounded-lg border border-white/20">
+                            <ShieldCheck className="w-3 h-3" /> Verified Solver
+                        </span>
+                    )}
+                </div>
                 
                 {profile.location && (
                   <div className="flex items-center gap-2 mt-6 text-gray-400 font-bold text-sm">
@@ -129,6 +165,11 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                         <p className="text-[10px] font-bold text-gray-400 mt-1">
                           {isStudent ? (profile.major ? `${profile.major} | Year ${profile.gradYear || 'N/A'}` : 'Academic Node') : `Team Size: ${profile.teamSize || 'N/A'}`}
                         </p>
+                        {isStudent && (
+                            <div className="mt-3 inline-flex items-center gap-1.5 text-forest text-[8px] font-black uppercase tracking-widest bg-forest/5 px-2 py-0.5 rounded-md border border-forest/10">
+                                <ShieldCheck className="w-2.5 h-2.5" /> University Verified Node
+                            </div>
+                        )}
                      </div>
                   </div>
                   <div className="space-y-4">

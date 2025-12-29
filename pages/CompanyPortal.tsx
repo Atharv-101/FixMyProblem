@@ -2,16 +2,16 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag } from 'lucide-react';
+import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag, Wand2 } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import ProfileCard from '../components/ProfileCard.tsx';
 import PaymentGatewayModal from '../components/PaymentGatewayModal.tsx';
+import { refineProblemDescription } from '../services/geminiService.ts';
 
 interface CompanyPortalProps {
-  // Added onProfileClick prop to resolve type error
   onProfileClick: (id: string) => void;
 }
 
@@ -22,6 +22,7 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
     const [acceptModalOpen, setAcceptModalOpen] = useState<Solution | null>(null);
     const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
     const [showPaymentGateway, setShowPaymentGateway] = useState(false);
+    const [isRefining, setIsRefining] = useState(false);
     
     const [currentProblem, setCurrentProblem] = useState<Problem | null>(null);
     
@@ -49,6 +50,14 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
         setTitle(''); setDesc(''); setBounty(''); setTags('');
         setExpectedBehavior(''); setCurrentBehavior('');
         setTechStack(''); setStepsToReproduce(''); setImpact('');
+    };
+
+    const handleRefine = async () => {
+        if (!desc.trim()) return;
+        setIsRefining(true);
+        const refined = await refineProblemDescription(desc);
+        setDesc(refined);
+        setIsRefining(false);
     };
 
     const openPostModal = () => {
@@ -121,7 +130,7 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
     const activeProblemBounty = acceptModalOpen ? problems.find(p => p.id === acceptModalOpen.problemId)?.bounty : '₹0';
     const activeProblemTitle = acceptModalOpen ? problems.find(p => p.id === acceptModalOpen.problemId)?.title : '';
 
-    const grossVal = parseFloat(activeProblemBounty?.replace(/[^\d.]/g, '') || '0');
+    const grossVal = parseFloat(activeProblemBounty?.replace(/[^\d.]/g, '')) || 0;
     const studentTakeHome = grossVal * 0.9;
     const platformFee = grossVal * 0.1;
 
@@ -251,7 +260,17 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Info className="w-3 h-3"/> Problem Summary</label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Info className="w-3 h-3"/> Problem Summary</label>
+                            <button 
+                                type="button" 
+                                onClick={handleRefine}
+                                disabled={isRefining || !desc.trim()}
+                                className="flex items-center gap-1.5 px-3 py-1 bg-black text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-forest disabled:opacity-40 transition-all border border-citrus/30"
+                            >
+                                {isRefining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />} AI Refine
+                            </button>
+                        </div>
                         <textarea required className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="Briefly describe the roadblock..." value={desc} onChange={e => setDesc(e.target.value)} />
                     </div>
 

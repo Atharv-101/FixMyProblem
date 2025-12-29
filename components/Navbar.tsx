@@ -11,7 +11,6 @@ type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUT
 interface NavbarProps {
   onViewChange: (view: ViewState) => void;
   transparent?: boolean;
-  // Added onProfileClick prop to resolve type error
   onProfileClick: (id: string) => void;
 }
 
@@ -44,7 +43,7 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
   const isDarkNavbar = scrolled || !transparent || isMobileMenuOpen;
 
   return (
-    <nav className={`fixed top-0 w-full z-[100] transition-all duration-300 ${isDarkNavbar ? 'bg-white/95 backdrop-blur-sm border-b-[3px] border-black py-3 md:py-4' : 'bg-transparent py-6 md:py-8'}`}>
+    <nav className={`fixed top-0 w-full z-[100] transition-all duration-300 ${isDarkNavbar ? 'bg-white border-b-[3px] border-black py-3 md:py-4' : 'bg-transparent py-6 md:py-8'}`}>
       <div className="max-w-7xl mx-auto px-6 md:px-10 flex justify-between items-center">
         
         {/* Brand */}
@@ -113,23 +112,23 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
         <div className="md:hidden flex items-center relative z-[110]">
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className={`p-2.5 rounded-xl border-2 border-black transition-all ${isMobileMenuOpen ? 'bg-coral text-white' : 'bg-black text-white'}`}
+            className={`p-2.5 rounded-xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all ${isMobileMenuOpen ? 'bg-coral text-white' : 'bg-black text-white'}`}
           >
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay - Fixed Overlap & Opacity */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-[100] bg-paper pt-24 px-8 flex flex-col animate-fade-in">
-          <div className="space-y-4 mt-8 flex flex-col items-center">
+        <div className="md:hidden fixed inset-0 z-[100] bg-white pt-24 px-8 flex flex-col items-center justify-center animate-fade-in">
+          <div className="w-full max-w-sm space-y-6 flex flex-col items-center text-center">
             {!user ? (
               <>
-                <button onClick={() => handleNav('HOME')} className="text-4xl font-black text-black tracking-tighter py-2">Home</button>
-                <button onClick={() => handleNav('LEADERBOARD')} className="text-4xl font-black text-black tracking-tighter py-2">Rankings</button>
-                <button onClick={() => handleNav('CONTACT')} className="text-4xl font-black text-black tracking-tighter py-2">Support</button>
-                <div className="pt-8 w-full max-w-sm">
+                <button onClick={() => handleNav('HOME')} className="text-4xl font-black text-black tracking-tighter py-3 hover:text-coral transition-colors">Home</button>
+                <button onClick={() => handleNav('LEADERBOARD')} className="text-4xl font-black text-black tracking-tighter py-3 hover:text-coral transition-colors">Rankings</button>
+                <button onClick={() => handleNav('CONTACT')} className="text-4xl font-black text-black tracking-tighter py-3 hover:text-coral transition-colors">Support</button>
+                <div className="pt-10 w-full">
                   <button 
                     onClick={() => handleNav('AUTH')} 
                     className="tactile-btn w-full py-5 bg-black text-white rounded-2xl font-black text-xl uppercase tracking-widest"
@@ -140,21 +139,21 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
               </>
             ) : (
               <>
-                <div className="flex items-center gap-4 p-6 bg-white border-2 border-black rounded-3xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm mb-4">
-                   <div className="w-14 h-14 rounded-2xl bg-citrus border-2 border-black flex items-center justify-center font-black text-xl">
+                <div className="flex items-center gap-4 p-6 bg-paper border-[3px] border-black rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full mb-6">
+                   <div className="w-16 h-16 rounded-2xl bg-citrus border-2 border-black flex items-center justify-center font-black text-2xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                       {user.name ? user.name.charAt(0) : 'U'}
                    </div>
-                   <div className="truncate">
-                      <h4 className="text-lg font-black text-black truncate">{user.name}</h4>
-                      <p className="text-[9px] font-black uppercase text-coral tracking-widest">{user.role}</p>
+                   <div className="truncate text-left">
+                      <h4 className="text-xl font-black text-black truncate">{user.name}</h4>
+                      <p className="text-[10px] font-black uppercase text-coral tracking-widest">{user.role}</p>
                    </div>
                 </div>
-                <button onClick={() => handleNav('DASHBOARD')} className="text-3xl font-black text-black tracking-tighter py-2">Workspace</button>
-                <button onClick={() => handleNav('PAYMENT_HISTORY')} className="text-3xl font-black text-black tracking-tighter py-2">Payouts</button>
-                <div className="mt-8 w-full max-w-sm">
+                <button onClick={() => handleNav('DASHBOARD')} className="text-4xl font-black text-black tracking-tighter py-3 hover:text-coral transition-colors">Workspace</button>
+                <button onClick={() => handleNav('PAYMENT_HISTORY')} className="text-4xl font-black text-black tracking-tighter py-3 hover:text-coral transition-colors">Payouts</button>
+                <div className="mt-10 w-full">
                   <button 
                     onClick={logout} 
-                    className="tactile-btn w-full py-4 bg-white text-black border-2 border-black rounded-2xl font-black text-base uppercase tracking-widest"
+                    className="tactile-btn w-full py-4 bg-white text-black border-[3px] border-black rounded-2xl font-black text-lg uppercase tracking-widest"
                   >
                     Disconnect
                   </button>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Terminal, MoveRight, Star, Zap, Activity, IndianRupee, ArrowRight } from 'lucide-react';
+import { Terminal, MoveRight, Star, Zap, Activity, IndianRupee, ArrowRight, Users, Building2, Globe } from 'lucide-react';
 import { UserRole } from '../../types.ts';
 import { getLiveInsights } from '../../services/geminiService.ts';
 
@@ -9,7 +9,7 @@ interface HeroProps {
   stats: any;
 }
 
-const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
+const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [liveInsights, setLiveInsights] = useState<string[]>([]);
 
@@ -95,20 +95,20 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
                 {[1,2,3,4,5].map(i => <Star key={i} className="w-3 h-3 fill-current" />)}
               </div>
               <p className="text-[9px] font-black uppercase tracking-[0.1em] text-gray-400">
-                <span className="text-black">100+</span> Problems Fixed
+                <span className="text-black">{stats.totalProblems || '12.4K+'}</span> Problems Fixed
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right Content */}
+        {/* Right Content - Updated Visuals */}
         <div className="relative h-[450px] lg:h-[700px] w-full flex items-center justify-center group">
           <div 
             className="relative w-full h-full max-w-sm lg:max-w-md transition-transform duration-700 ease-out preserve-3d scale-[0.85] lg:scale-100"
             style={{ transform: `translate3d(${mousePos.x * 0.4}px, ${mousePos.y * 0.4}px, 0) rotateY(${mousePos.x * 0.1}deg) rotateX(${mousePos.y * -0.1}deg)` }}
           >
-            {/* Main Note Card */}
-            <div className="absolute top-[5%] left-0 w-full tactile-card rounded-[2.5rem] lg:rounded-[3rem] rotate-[-2deg] z-30 animate-float shadow-2xl transition-transform duration-700">
+            {/* Main Community Metrics Card */}
+            <div className="absolute top-[5%] left-0 w-full tactile-card rounded-[2.5rem] lg:rounded-[3rem] rotate-[-2deg] z-30 animate-float shadow-2xl transition-transform duration-700 bg-white">
                <div className="sticker-tape"></div>
                <div className="p-1.5 bg-black rounded-t-[2.5rem] lg:rounded-t-[3rem] overflow-hidden relative">
                   <div className="h-1 w-full bg-citrus/20 absolute bottom-0 left-0">
@@ -116,37 +116,44 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
                   </div>
                </div>
                <div className="p-8 lg:p-10">
-                  <div className="flex justify-between items-start mb-8">
-                    <div className="relative">
-                      <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-[1.5rem] lg:rounded-[2rem] bg-gray-100 border-4 border-black overflow-hidden shadow-[5px_5px_0px_0px_rgba(255,95,95,1)]">
-                         <img src="https://media.licdn.com/dms/image/v2/D5603AQGLwDnKts91tQ/profile-displayphoto-shrink_800_800/B56ZXGwXi7HQAc-/0/1742796324542?e=1768435200&v=beta&t=Je9Alo9GV8-VHh4TcEK0lJYt95AcY2YPU5m5SKQgXKQ" className="w-full h-full object-cover grayscale" />
-                      </div>
-                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-forest text-citrus rounded-lg border-2 border-black flex items-center justify-center">
-                        <Activity className="w-5 h-5" />
-                      </div>
-                    </div>
-                    <div className="text-right">
-                       <div className="bg-forest text-citrus text-[8px] font-black px-3 py-1.5 uppercase tracking-widest rounded-full mb-3 border border-black">Tier: SSS+</div>
-                       <p className="text-2xl lg:text-3xl font-black text-black leading-none">Atharv Gangarde</p>
-                       <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">MCOERC, Nashik</p>
-                    </div>
+                  <div className="flex justify-between items-center mb-10">
+                    <h3 className="text-2xl lg:text-3xl font-black text-black tracking-tighter">Grid Metrics.</h3>
+                    <Globe className="w-6 h-6 text-coral animate-pulse" />
                   </div>
-                  <div className="space-y-6">
-                     <div className="flex justify-between items-end border-b border-black/5 pb-3">
-                        <div>
-                          <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Payouts</p>
-                          <p className="text-xl lg:text-2xl font-black text-forest">₹1,xxxx..</p>
+                  
+                  <div className="space-y-8">
+                     <div className="flex items-center gap-5 p-4 bg-gray-50 border-2 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="w-14 h-14 bg-citrus rounded-xl flex items-center justify-center border-2 border-black">
+                           <Users className="w-7 h-7 text-black" />
                         </div>
-                        <div className="text-right">
-                           <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Score</p>
-                           <p className="text-xl lg:text-2xl font-black text-coral">9.98</p>
+                        <div>
+                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Solvers</p>
+                           <p className="text-3xl font-black text-black">{stats.totalStudents || 0}</p>
                         </div>
                      </div>
+
+                     <div className="flex items-center gap-5 p-4 bg-gray-50 border-2 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="w-14 h-14 bg-forest rounded-xl flex items-center justify-center border-2 border-black">
+                           <Building2 className="w-7 h-7 text-citrus" />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Entity Nodes</p>
+                           <p className="text-3xl font-black text-black">{stats.totalCompanies || 0}</p>
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="mt-10 pt-6 border-t border-black/5 flex justify-between items-center">
+                    <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Status: Operational</span>
+                    <div className="flex items-center gap-1.5">
+                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                       <span className="text-[9px] font-black uppercase text-forest">Live Sync</span>
+                    </div>
                   </div>
                </div>
             </div>
 
-            {/* Floating Terminal */}
+            {/* Floating Status Terminal */}
             <div 
               className="absolute bottom-6 -right-4 w-60 bg-black text-citrus tactile-card p-6 rounded-[2rem] rotate-[4deg] z-40 hidden sm:block animate-float [animation-delay:2s]"
             >
