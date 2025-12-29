@@ -95,7 +95,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
                 {[1,2,3,4,5].map(i => <Star key={i} className="w-3 h-3 fill-current" />)}
               </div>
               <p className="text-[9px] font-black uppercase tracking-[0.1em] text-gray-400">
-                <span className="text-black">12.4K+</span> Problems Fixed
+                <span className="text-black">100+</span> Problems Fixed
               </p>
             </div>
           </div>
@@ -119,23 +119,23 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
                   <div className="flex justify-between items-start mb-8">
                     <div className="relative">
                       <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-[1.5rem] lg:rounded-[2rem] bg-gray-100 border-4 border-black overflow-hidden shadow-[5px_5px_0px_0px_rgba(255,95,95,1)]">
-                         <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&auto=format" className="w-full h-full object-cover grayscale" />
+                         <img src="https://media.licdn.com/dms/image/v2/D5603AQGLwDnKts91tQ/profile-displayphoto-shrink_800_800/B56ZXGwXi7HQAc-/0/1742796324542?e=1768435200&v=beta&t=Je9Alo9GV8-VHh4TcEK0lJYt95AcY2YPU5m5SKQgXKQ" className="w-full h-full object-cover grayscale" />
                       </div>
                       <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-forest text-citrus rounded-lg border-2 border-black flex items-center justify-center">
                         <Activity className="w-5 h-5" />
                       </div>
                     </div>
                     <div className="text-right">
-                       <div className="bg-forest text-citrus text-[8px] font-black px-3 py-1.5 uppercase tracking-widest rounded-full mb-3 border border-black">Tier: Alpha</div>
-                       <p className="text-2xl lg:text-3xl font-black text-black leading-none">Alex M.</p>
-                       <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">IIT Kharagpur</p>
+                       <div className="bg-forest text-citrus text-[8px] font-black px-3 py-1.5 uppercase tracking-widest rounded-full mb-3 border border-black">Tier: SSS+</div>
+                       <p className="text-2xl lg:text-3xl font-black text-black leading-none">Atharv Gangarde</p>
+                       <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">MCOERC, Nashik</p>
                     </div>
                   </div>
                   <div className="space-y-6">
                      <div className="flex justify-between items-end border-b border-black/5 pb-3">
                         <div>
                           <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Payouts</p>
-                          <p className="text-xl lg:text-2xl font-black text-forest">₹12.8M</p>
+                          <p className="text-xl lg:text-2xl font-black text-forest">₹1,xxxx..</p>
                         </div>
                         <div className="text-right">
                            <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Score</p>
