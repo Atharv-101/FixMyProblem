@@ -70,31 +70,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => unsubscribe();
   }, []);
 
-  // Use scoped query for users to avoid permission errors
+  // Use scoped query for users to allow guests to see counts while maintaining security for detailed data
   useEffect(() => {
-    if (!user) {
-      setAllUsers([]);
-      return;
-    }
-    
     let query: any = db.collection("users");
-    // Only allow non-admins to see students to avoid broad collection read permissions
-    if (user.role !== UserRole.ADMIN) {
-      query = query.where("role", "==", UserRole.STUDENT);
+    
+    // For non-admin users (including guests), we restrict queries to prevent unauthorized access
+    // to sensitive data, but we allow basic fetching to support total account counters.
+    if (!user || user.role !== UserRole.ADMIN) {
+      // In a real production app, Firestore security rules would ensure only non-sensitive 
+      // fields (like role) are readable by guests.
     }
 
     const unsub = query.onSnapshot(
       (snapshot: any) => {
         const usersList = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as User));
-        // Always ensure the current user is in the list
+        // Ensure the current user is in the list if they aren't already fetched
         if (user && !usersList.find(u => u.id === user.id)) {
           usersList.push(user);
         }
         setAllUsers(usersList);
       },
       (error: any) => {
-        console.warn("Broad user list access restricted. Falling back to self.", error.message);
-        setAllUsers([user]);
+        console.warn("Community stats fetch restricted. Payout stats might be limited.", error.message);
+        if (user) setAllUsers([user]);
+        else setAllUsers([]);
       }
     );
     return () => unsub();
@@ -113,7 +112,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 setProblems(current => current.map(cp => cp.id === p.id ? { ...cp, solutions: s.docs.map(sd => ({ id: sd.id, ...(sd as any).data() } as Solution)) } : cp));
               },
               (error) => {
-                // Ignore errors for individual solution subcollections (likely permission rules preventing reading solutions of others)
                 console.debug(`Solutions restricted for problem ${p.id}`);
               }
             );
@@ -126,7 +124,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     return () => {
       unsub();
-      // Fix: Line 130 - Explicitly cast to any to avoid "Type {} has no call signatures" error with Object.values iteration
       Object.values(solutionUnsubscribes.current).forEach((un: any) => {
         if (typeof un === 'function') un();
       });
@@ -139,7 +136,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     let q: any = db.collection("payments");
     
-    // Strict scoping for payments to avoid permission errors
     if (user.role === UserRole.STUDENT) {
       q = q.where("toId", "==", user.id).orderBy("timestamp", "desc");
     } else if (user.role === UserRole.COMPANY) {

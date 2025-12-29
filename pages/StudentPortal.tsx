@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target, ShieldCheck } from 'lucide-react';
+import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target, ShieldCheck, Upload, FileArchive, X } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
@@ -25,6 +25,8 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showStudentProfileCard, setShowStudentProfileCard] = useState(false);
+    
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const currentUserData = allUsers.find(u => u.id === user?.id) || user;
     const activeProblemForSubmission = problems.find(p => p.id === selectedProblemIdForSubmission);
@@ -64,6 +66,17 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
     const handleSolveFromDetails = (problemId: string) => {
         setSelectedProblemIdForSubmission(problemId);
         setShowProblemDetailModal(false);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 50 * 1024 * 1024) {
+                alert("Payload too heavy. Max size: 50MB");
+                return;
+            }
+            setSolutionFile(file);
+        }
     };
 
     return (
@@ -211,20 +224,58 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                     </div>
 
                     <div>
-                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Solution Payload</label>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Technical Summary</label>
                         <textarea 
                             required 
-                            className="w-full border-2 border-black rounded-xl md:rounded-2xl p-4 md:p-5 h-48 md:h-64 font-mono text-xs md:text-sm focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
-                            placeholder="// Type your execution plan here..." 
+                            className="w-full border-2 border-black rounded-xl md:rounded-2xl p-4 md:p-5 h-32 md:h-48 font-mono text-xs md:text-sm focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
+                            placeholder="// Briefly explain your fix or methodology..." 
                             value={solutionText} 
                             onChange={e => setSolutionText(e.target.value)} 
                         />
                     </div>
+
+                    <div>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Code Payload (ZIP/Archive)</label>
+                        <div 
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`w-full border-2 border-black border-dashed rounded-2xl p-6 md:p-10 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-citrus/5 ${solutionFile ? 'bg-forest/5' : 'bg-paper'}`}
+                        >
+                            <input 
+                              type="file" 
+                              ref={fileInputRef} 
+                              onChange={handleFileChange} 
+                              className="hidden" 
+                              accept=".zip,.rar,.7z,.tar,.gz" 
+                            />
+                            {solutionFile ? (
+                                <div className="flex items-center gap-4 animate-pop">
+                                    <FileArchive className="w-10 h-10 text-forest" />
+                                    <div className="text-left">
+                                        <p className="text-sm font-black text-black truncate max-w-[180px] md:max-w-xs">{solutionFile.name}</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase">{(solutionFile.size / (1024 * 1024)).toFixed(2)} MB • READY FOR COMMIT</p>
+                                    </div>
+                                    <button 
+                                      type="button" 
+                                      onClick={(e) => { e.stopPropagation(); setSolutionFile(null); }}
+                                      className="p-1 hover:bg-coral/10 rounded-lg text-coral"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <Upload className="w-8 h-8 text-gray-300 mb-2" />
+                                    <p className="text-xs font-black text-black uppercase tracking-widest">Attach Source Code ZIP</p>
+                                    <p className="text-[9px] font-bold text-gray-400 uppercase mt-1">Maximum Scale: 50MB</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
                     
                     <button 
                         type="submit" 
-                        disabled={isSubmitting} 
-                        className="tactile-btn w-full bg-forest text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-sm md:text-lg uppercase tracking-widest flex items-center justify-center gap-3 md:gap-4"
+                        disabled={isSubmitting || !solutionFile} 
+                        className="tactile-btn w-full bg-forest text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-sm md:text-lg uppercase tracking-widest flex items-center justify-center gap-3 md:gap-4 disabled:opacity-50"
                     >
                         {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Commit Changes <ArrowUpRight className="w-5 h-5 md:w-6 md:h-6" /></>}
                     </button>

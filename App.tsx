@@ -17,8 +17,9 @@ import ContactPage from './pages/ContactPage.tsx';
 import Leaderboard from './pages/Leaderboard.tsx';
 import PaymentHistory from './pages/PaymentHistory.tsx';
 import ProfileDossier from './pages/ProfileDossier.tsx';
+import Error404 from './pages/Error404.tsx';
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW';
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404';
 
 const FixMyProblemApp: React.FC = () => {
   const { user, loading, siteConfig } = useStore();
@@ -36,6 +37,11 @@ const FixMyProblemApp: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
+  const navigateTo = (newView: ViewState) => {
+    setView(newView);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-paper">
         <Loader2 className="w-12 h-12 animate-spin text-coral" />
@@ -43,31 +49,42 @@ const FixMyProblemApp: React.FC = () => {
   );
 
   let currentContent;
-  if (view === 'HOME' && !user) currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} onProfileClick={handleOpenProfile} />;
-  else if (view === 'LEADERBOARD') currentContent = <Leaderboard onProfileClick={handleOpenProfile} />;
-  else if (view === 'PRIVACY' || view === 'TERMS') currentContent = <LegalPage type={view} />;
-  else if (view === 'CONTACT') currentContent = <ContactPage />;
-  else if (view === 'PAYMENT_HISTORY') currentContent = <PaymentHistory />;
-  else if (view === 'PROFILE_VIEW' && targetProfileId) currentContent = <ProfileDossier userId={targetProfileId} onBack={() => setView('DASHBOARD')} />;
-  else if (view === 'AUTH' && !user) currentContent = <AuthPage initialRole={authRole} onBack={() => setView('HOME')} />;
-  else if (user) {
-      if (view === 'DASHBOARD') {
-        if (user.role === UserRole.ADMIN) currentContent = <AdminPortal onProfileClick={handleOpenProfile} />;
-        else if (user.role === UserRole.COMPANY) currentContent = <CompanyPortal onProfileClick={handleOpenProfile} />;
-        else currentContent = <StudentPortal onProfileClick={handleOpenProfile} />;
-      } else {
-        currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} onProfileClick={handleOpenProfile} />;
-      }
+  
+  // View Routing Logic
+  if (view === 'HOME') {
+    currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); navigateTo('AUTH'); }} onViewChange={navigateTo} onProfileClick={handleOpenProfile} />;
+  } else if (view === 'LEADERBOARD') {
+    currentContent = <Leaderboard onProfileClick={handleOpenProfile} />;
+  } else if (view === 'PRIVACY' || view === 'TERMS') {
+    currentContent = <LegalPage type={view} />;
+  } else if (view === 'CONTACT') {
+    currentContent = <ContactPage />;
+  } else if (view === 'AUTH' && !user) {
+    currentContent = <AuthPage initialRole={authRole} onBack={() => navigateTo('HOME')} />;
+  } else if (view === 'PROFILE_VIEW' && targetProfileId) {
+    currentContent = <ProfileDossier userId={targetProfileId} onBack={() => navigateTo('HOME')} />;
+  } else if (user) {
+    if (view === 'DASHBOARD') {
+      if (user.role === UserRole.ADMIN) currentContent = <AdminPortal onProfileClick={handleOpenProfile} />;
+      else if (user.role === UserRole.COMPANY) currentContent = <CompanyPortal onProfileClick={handleOpenProfile} />;
+      else currentContent = <StudentPortal onProfileClick={handleOpenProfile} />;
+    } else if (view === 'PAYMENT_HISTORY') {
+      currentContent = <PaymentHistory />;
+    } else {
+      currentContent = <Error404 onBack={() => navigateTo('HOME')} />;
+    }
+  } else if (view === 'ERROR_404') {
+    currentContent = <Error404 onBack={() => navigateTo('HOME')} />;
   } else {
-      currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} onProfileClick={handleOpenProfile} />;
+    currentContent = <Error404 onBack={() => navigateTo('HOME')} />;
   }
 
-  const showGlobalNav = view !== 'HOME' && view !== 'AUTH' && view !== 'PROFILE_VIEW';
+  const showGlobalNav = view !== 'AUTH' && view !== 'ERROR_404';
 
   return (
-    <div className="font-sans text-black bg-paper min-h-screen transition-all" style={{ fontSize: `${siteConfig.baseFontSize}px` }}>
-      {showGlobalNav && <Navbar onViewChange={setView} onProfileClick={handleOpenProfile} />}
-      <main className="w-full">
+    <div className="font-sans text-black bg-paper min-h-screen transition-all flex flex-col" style={{ fontSize: `${siteConfig.baseFontSize}px` }}>
+      {showGlobalNav && <Navbar onViewChange={navigateTo} transparent={view === 'HOME'} onProfileClick={handleOpenProfile} />}
+      <main className="w-full flex-grow">
         {currentContent}
       </main>
       <ScrollToTopButton />

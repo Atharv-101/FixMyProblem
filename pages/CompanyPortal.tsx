@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag, Wand2 } from 'lucide-react';
+import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag, Wand2, FileArchive } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
@@ -199,8 +199,17 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                                                    <span className="text-[9px] md:text-[10px] font-black uppercase text-gray-400 tracking-widest">Execution ID: {s.id.slice(-4)}</span>
                                                 </div>
                                                 <div className="flex gap-2 md:gap-4 w-full md:w-auto">
-                                                    {s.attachmentUrl && <a href={s.attachmentUrl} target="_blank" className="flex-1 md:flex-none p-2.5 md:p-3 bg-white border-2 border-black rounded-xl hover:scale-110 transition-transform flex items-center justify-center"><Download className="w-4 h-4 md:w-5 md:h-5 text-black"/></a>}
-                                                    {p.status === 'OPEN' && !s.isAccepted && <button onClick={() => setAcceptModalOpen(s)} className="flex-[2] md:flex-none tactile-btn bg-black text-white px-5 py-2 md:px-6 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-forest">Audit</button>}
+                                                    {s.attachmentUrl && (
+                                                      <a 
+                                                        href={s.attachmentUrl} 
+                                                        target="_blank" 
+                                                        download={s.attachmentName || "payload.zip"}
+                                                        className="flex-1 md:flex-none px-4 py-2.5 bg-black text-white border-2 border-black rounded-xl hover:bg-forest transition-all flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest"
+                                                      >
+                                                        <FileArchive className="w-4 h-4"/> Payload
+                                                      </a>
+                                                    )}
+                                                    {p.status === 'OPEN' && !s.isAccepted && <button onClick={() => setAcceptModalOpen(s)} className="flex-[2] md:flex-none tactile-btn bg-coral text-white px-5 py-2 md:px-6 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-forest transition-colors">Audit Fix</button>}
                                                     {s.isAccepted && <span className="flex-1 md:flex-none px-3 py-2 md:px-4 bg-forest text-citrus rounded-xl font-black text-[9px] md:text-xs uppercase tracking-widest flex items-center justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"><CheckCircle2 className="w-3 h-3 md:w-4 h-4"/> Accepted</span>}
                                                 </div>
                                             </div>
@@ -339,6 +348,7 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                         <StarRatingInput rating={rating} setRating={setRating} />
                     </div>
                     
+                    {/* Fixed onChange handler by correctly extracting value from event */}
                     <textarea className="w-full border-2 border-black p-4 rounded-xl h-24 md:h-32 font-bold bg-paper outline-none text-xs md:text-sm" placeholder="Encourage your solver..." value={feedback} onChange={e => setFeedback(e.target.value)} />
                     
                     <button onClick={handleAcceptClick} className="tactile-btn w-full bg-coral text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-xl uppercase tracking-widest flex items-center justify-center gap-3 md:gap-4 shadow-xl">
