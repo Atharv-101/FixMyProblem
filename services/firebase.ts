@@ -14,17 +14,11 @@ const firebaseConfig = {
   measurementId: "G-80K1XVWDCF"
 };
 
-// Singleton initialization pattern for browser ESM environments
-let app;
-if (!firebase.apps.length) {
-  app = firebase.initializeApp(firebaseConfig);
-} else {
-  app = firebase.app();
-}
+// Singleton initialization for compat SDK
+const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
 
-// Explicitly derive and export services from the singleton app instance
-export const auth = app.auth();
-export const db = app.firestore();
-export const storage = app.storage();
+export const auth = firebase.auth();
+export const db = firebase.firestore();
+export const storage = firebase.storage();
 
-export default firebase;
+export default app;
