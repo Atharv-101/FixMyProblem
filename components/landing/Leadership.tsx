@@ -71,11 +71,11 @@ const Leadership: React.FC = () => {
                <div className="grid grid-cols-2 gap-4 mb-10">
                   <div className="p-5 bg-gray-50 border-2 border-black rounded-2xl">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Deployments</p>
-                     <p className="text-2xl font-black">24+ Systems</p>
+                     <p className="text-2xl font-black">2 Systems</p>
                   </div>
                   <div className="p-5 bg-gray-50 border-2 border-black rounded-2xl">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Engineers</p>
-                     <p className="text-2xl font-black">12k+ Active</p>
+                     <p className="text-2xl font-black">10 Active</p>
                   </div>
                </div>
 
