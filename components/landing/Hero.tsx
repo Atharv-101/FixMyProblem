@@ -119,7 +119,7 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
                   <div className="flex justify-between items-start mb-8">
                     <div className="relative">
                       <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-[1.5rem] lg:rounded-[2rem] bg-gray-100 border-4 border-black overflow-hidden shadow-[5px_5px_0px_0px_rgba(255,95,95,1)]">
-                         <img src="https://media.licdn.com/dms/image/v2/D5603AQGLwDnKts91tQ/profile-displayphoto-shrink_800_800/B56ZXGwXi7HQAc-/0/1742796324542?e=1768435200&v=beta&t=Je9Alo9GV8-VHh4TcEK0lJYt95AcY2YPU5m5SKQgXKQ" className="w-full h-full object-cover grayscale" />
+                         <img src="https://github.com/Atharv-101/FixMyProblem/blob/main/assets/img/atharvv.jpeg" className="w-full h-full object-cover grayscale" />
                       </div>
                       <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-forest text-citrus rounded-lg border-2 border-black flex items-center justify-center">
                         <Activity className="w-5 h-5" />
