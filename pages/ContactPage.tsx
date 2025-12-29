@@ -51,13 +51,13 @@ const ContactPage: React.FC = () => {
                             </div>
                             <div className="flex items-center text-sm md:text-base">
                                 <Phone className="w-5 h-5 mr-4 text-gray-500" aria-hidden="true" />
-                                <span className="font-semibold">Phone:</span> <a href="tel:+11234567890" className="ml-2 text-blue-600 hover:underline">+1 (123) 456-7890</a>
+                                <span className="font-semibold">Phone:</span> <a href="tel:+9423109991" className="ml-2 text-blue-600 hover:underline">+91 942310-9991</a>
                             </div>
                             <div className="flex items-start text-sm md:text-base">
                                 <MapPin className="w-5 h-5 mr-4 mt-1 text-gray-500 flex-shrink-0" aria-hidden="true" />
                                 <div>
                                     <span className="font-semibold block">Headquarters:</span> 
-                                    <p className="ml-0 mt-1">123 Innovation Drive,<br/>Tech Hub City, TL 90210, Country</p>
+                                    <p className="ml-0 mt-1">Nashik, IN</p>
                                 </div>
                             </div>
                             <div className="pt-6 border-t border-gray-100 mt-6">
