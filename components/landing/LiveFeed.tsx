@@ -13,11 +13,14 @@ interface LiveFeedProps {
   onProfileLeave: () => void;
   showProfileCard: string | null;
   hoveredUser: User | null;
+  // Added onProfileClick prop
+  onProfileClick: (id: string) => void;
 }
 
 const LiveFeed: React.FC<LiveFeedProps> = ({ 
   problems, allUsers, onViewChange, onProblemClick, 
-  onProfileHover, onProfileLeave, showProfileCard, hoveredUser 
+  onProfileHover, onProfileLeave, showProfileCard, hoveredUser,
+  onProfileClick
 }) => {
   return (
     <section className="py-24 px-4 md:px-10 bg-transparent relative border-t-2 border-black">
@@ -51,6 +54,7 @@ const LiveFeed: React.FC<LiveFeedProps> = ({
                     className="flex items-center relative"
                     onMouseEnter={() => onProfileHover(prob.companyId)}
                     onMouseLeave={onProfileLeave}
+                    onClick={(e) => { e.stopPropagation(); onProfileClick(prob.companyId); }}
                   >
                      <div className="w-10 h-10 rounded-xl bg-gray-50 border-2 border-black flex items-center justify-center mr-3 font-black text-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         {prob.companyName.charAt(0)}

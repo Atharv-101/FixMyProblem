@@ -20,29 +20,20 @@ export interface Review {
   companyName: string;
 }
 
-export interface Payment {
-  id: string;
-  problemId: string;
-  problemTitle: string;
-  amount: string; // Gross amount
-  commissionAmount: string; // 10%
-  netAmount: string; // 90%
-  status: 'COMPLETED' | 'PENDING' | 'FAILED';
-  fromId: string;
-  fromName: string;
-  toId: string;
-  toName: string;
-  timestamp: string;
-  method: string;
-}
-
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   university?: string;
+  major?: string;
+  gradYear?: string;
   companyName?: string;
+  teamSize?: string;
+  location?: string;
+  linkedin?: string;
+  github?: string;
+  websiteUrl?: string;
   rating?: number;
   solvedCount?: number;
   reviews?: Review[];
@@ -50,8 +41,24 @@ export interface User {
   bio?: string;
   profilePicUrl?: string;
   skills?: string[];
-  websiteUrl?: string;
   isBanned?: boolean;
+  joinedAt?: string;
+}
+
+export interface Payment {
+  id: string;
+  problemId: string;
+  problemTitle: string;
+  amount: string;
+  commissionAmount: string;
+  netAmount: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
+  fromId: string;
+  fromName: string;
+  toId: string;
+  toName: string;
+  timestamp: string;
+  method: string;
 }
 
 export interface Solution {
@@ -74,6 +81,11 @@ export interface Problem {
   companyName: string;
   title: string;
   description: string;
+  expectedBehavior?: string;
+  currentBehavior?: string;
+  techStack?: string;
+  stepsToReproduce?: string;
+  impact?: string;
   bounty: string;
   status: 'OPEN' | 'CLOSED';
   createdAt: string;

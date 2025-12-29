@@ -6,7 +6,12 @@ import { Users, CheckCircle2, Star, Trophy, BarChart3, Loader2, ArrowLeft, Shiel
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import ProfileCard from '../components/ProfileCard.tsx';
 
-const AdminPortal: React.FC = () => {
+interface AdminPortalProps {
+  // Added onProfileClick prop to resolve type error
+  onProfileClick: (id: string) => void;
+}
+
+const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
   const { allUsers, problems, siteConfig, updateSiteConfig, adminDeleteUser, adminDeleteProblem, adminBanUser } = useStore();
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'USERS' | 'CONTENT' | 'SETTINGS'>('OVERVIEW');
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -170,9 +175,10 @@ const AdminPortal: React.FC = () => {
                      <tr key={u.id} className="hover:bg-gray-50 group">
                        <td className="p-6 font-bold text-black">
                           <div 
-                            className="flex items-center relative"
+                            className="flex items-center relative cursor-pointer"
                             onMouseEnter={() => handleProfileHover(u)}
                             onMouseLeave={handleProfileLeave}
+                            onClick={() => onProfileClick(u.id)}
                           >
                               <div className="w-12 h-12 rounded-xl bg-paper border-2 border-black flex items-center justify-center mr-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] overflow-hidden font-black">
                                 {u.profilePicUrl ? <img src={u.profilePicUrl} className="w-full h-full object-cover" /> : u.name.charAt(0)}
@@ -315,6 +321,7 @@ const AdminPortal: React.FC = () => {
           isOpen={showProblemDetailModal}
           onClose={() => setShowProblemDetailModal(false)}
           problem={currentProblemForDetails}
+          onProfileClick={onProfileClick}
       />
     </div>
   );

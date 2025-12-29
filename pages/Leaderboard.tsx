@@ -5,7 +5,12 @@ import { UserRole, User } from '../types.ts';
 import { Trophy, Star } from 'lucide-react';
 import ProfileCard from '../components/ProfileCard.tsx';
 
-const Leaderboard: React.FC = () => {
+interface LeaderboardProps {
+  // Added onProfileClick prop to resolve type error
+  onProfileClick: (id: string) => void;
+}
+
+const Leaderboard: React.FC<LeaderboardProps> = ({ onProfileClick }) => {
   const { allUsers } = useStore();
   const students = allUsers.filter(u => u.role === UserRole.STUDENT).sort((a, b) => (b.rating || 0) - (a.rating || 0));
   
@@ -31,9 +36,10 @@ const Leaderboard: React.FC = () => {
                       <div key={s.id} className="flex items-center p-6 border-b hover:bg-blue-50">
                           <span className="w-8 font-bold text-gray-400 text-xl">#{i+1}</span>
                           <div 
-                            className="flex-1 ml-4 flex items-center relative group"
+                            className="flex-1 ml-4 flex items-center relative group cursor-pointer"
                             onMouseEnter={() => handleProfileHover(s)}
                             onMouseLeave={handleProfileLeave}
+                            onClick={() => onProfileClick(s.id)}
                           >
                               {s.profilePicUrl ? (
                                   <img src={s.profilePicUrl} className="w-10 h-10 rounded-full object-cover mr-3 border" />

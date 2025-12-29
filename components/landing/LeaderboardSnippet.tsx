@@ -11,10 +11,13 @@ interface LeaderboardSnippetProps {
   onProfileLeave: () => void;
   showProfileCard: string | null;
   hoveredUser: User | null;
+  // Added onProfileClick prop
+  onProfileClick: (id: string) => void;
 }
 
 const LeaderboardSnippet: React.FC<LeaderboardSnippetProps> = ({ 
-  topStudents, onViewChange, onProfileHover, onProfileLeave, showProfileCard, hoveredUser 
+  topStudents, onViewChange, onProfileHover, onProfileLeave, showProfileCard, hoveredUser,
+  onProfileClick
 }) => {
   return (
     <section className="py-24 px-4 bg-gray-50 border-b border-gray-100">
@@ -36,9 +39,10 @@ const LeaderboardSnippet: React.FC<LeaderboardSnippetProps> = ({
                          <Trophy className={`w-6 h-6 ${i === 0 ? 'fill-yellow-500 text-yellow-500' : i === 1 ? 'fill-gray-400 text-gray-400' : 'fill-orange-400 text-orange-400'}`}/>
                        </div>
                        <div 
-                         className="flex-1 relative"
+                         className="flex-1 relative cursor-pointer"
                          onMouseEnter={() => onProfileHover(s.id)}
                          onMouseLeave={onProfileLeave}
+                         onClick={() => onProfileClick(s.id)}
                        >
                            <h3 className="font-bold text-lg md:text-xl text-gray-900 hover:underline cursor-help">{s.name}</h3>
                            <p className="text-gray-500 text-sm">{s.university}</p>

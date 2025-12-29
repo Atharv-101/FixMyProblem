@@ -16,17 +16,25 @@ import LegalPage from './pages/LegalPage.tsx';
 import ContactPage from './pages/ContactPage.tsx';
 import Leaderboard from './pages/Leaderboard.tsx';
 import PaymentHistory from './pages/PaymentHistory.tsx';
+import ProfileDossier from './pages/ProfileDossier.tsx';
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY';
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW';
 
 const FixMyProblemApp: React.FC = () => {
   const { user, loading, siteConfig } = useStore();
   const [view, setView] = useState<ViewState>('HOME');
   const [authRole, setAuthRole] = useState<UserRole>(UserRole.STUDENT);
+  const [targetProfileId, setTargetProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && view === 'AUTH') setView('DASHBOARD');
   }, [user]);
+
+  const handleOpenProfile = (id: string) => {
+    setTargetProfileId(id);
+    setView('PROFILE_VIEW');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-paper">
@@ -35,29 +43,30 @@ const FixMyProblemApp: React.FC = () => {
   );
 
   let currentContent;
-  if (view === 'HOME' && !user) currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} />;
-  else if (view === 'LEADERBOARD') currentContent = <Leaderboard />;
+  if (view === 'HOME' && !user) currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} onProfileClick={handleOpenProfile} />;
+  else if (view === 'LEADERBOARD') currentContent = <Leaderboard onProfileClick={handleOpenProfile} />;
   else if (view === 'PRIVACY' || view === 'TERMS') currentContent = <LegalPage type={view} />;
   else if (view === 'CONTACT') currentContent = <ContactPage />;
   else if (view === 'PAYMENT_HISTORY') currentContent = <PaymentHistory />;
+  else if (view === 'PROFILE_VIEW' && targetProfileId) currentContent = <ProfileDossier userId={targetProfileId} onBack={() => setView('DASHBOARD')} />;
   else if (view === 'AUTH' && !user) currentContent = <AuthPage initialRole={authRole} onBack={() => setView('HOME')} />;
   else if (user) {
       if (view === 'DASHBOARD') {
-        if (user.role === UserRole.ADMIN) currentContent = <AdminPortal />;
-        else if (user.role === UserRole.COMPANY) currentContent = <CompanyPortal />;
-        else currentContent = <StudentPortal />;
+        if (user.role === UserRole.ADMIN) currentContent = <AdminPortal onProfileClick={handleOpenProfile} />;
+        else if (user.role === UserRole.COMPANY) currentContent = <CompanyPortal onProfileClick={handleOpenProfile} />;
+        else currentContent = <StudentPortal onProfileClick={handleOpenProfile} />;
       } else {
-        currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} />;
+        currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} onProfileClick={handleOpenProfile} />;
       }
   } else {
-      currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} />;
+      currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); setView('AUTH'); }} onViewChange={setView} onProfileClick={handleOpenProfile} />;
   }
 
-  const showGlobalNav = view !== 'HOME' && view !== 'AUTH';
+  const showGlobalNav = view !== 'HOME' && view !== 'AUTH' && view !== 'PROFILE_VIEW';
 
   return (
     <div className="font-sans text-black bg-paper min-h-screen transition-all" style={{ fontSize: `${siteConfig.baseFontSize}px` }}>
-      {showGlobalNav && <Navbar onViewChange={setView} />}
+      {showGlobalNav && <Navbar onViewChange={setView} onProfileClick={handleOpenProfile} />}
       <main className="w-full">
         {currentContent}
       </main>

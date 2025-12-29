@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store.tsx';
-import { UserRole } from '../types.ts';
-import { UserCircle, Edit2, Globe } from 'lucide-react';
+import { UserRole, User } from '../types.ts';
+import { UserCircle, Terminal, Globe, Linkedin, Github, MapPin, GraduationCap, Building2, Users, Save, Sparkles, Camera } from 'lucide-react';
 import Modal from './Modal.tsx';
 
 interface ProfileEditModalProps {
@@ -12,18 +12,27 @@ interface ProfileEditModalProps {
 
 const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) => {
     const { user, updateUserProfile } = useStore();
-    const [name, setName] = useState(user?.name || '');
-    const [bio, setBio] = useState(user?.bio || '');
-    const [skills, setSkills] = useState(user?.skills?.join(', ') || '');
-    const [website, setWebsite] = useState(user?.websiteUrl || '');
     const [loading, setLoading] = useState(false);
+    
+    // Form State
+    const [formData, setFormData] = useState<Partial<User>>({});
 
     useEffect(() => {
-        if(user) {
-            setName(user.name);
-            setBio(user.bio || '');
-            setSkills(user.skills?.join(', ') || '');
-            setWebsite(user.websiteUrl || '');
+        if(user && isOpen) {
+            setFormData({
+                name: user.name || '',
+                bio: user.bio || '',
+                skills: user.skills || [],
+                websiteUrl: user.websiteUrl || '',
+                linkedin: user.linkedin || '',
+                github: user.github || '',
+                location: user.location || '',
+                university: user.university || '',
+                major: user.major || '',
+                gradYear: user.gradYear || '',
+                companyName: user.companyName || '',
+                teamSize: user.teamSize || '',
+            });
         }
     }, [user, isOpen]);
 
@@ -31,59 +40,185 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
         e.preventDefault();
         setLoading(true);
         try {
-            await updateUserProfile(
-                name, 
-                bio, 
-                skills.split(',').map(s => s.trim()).filter(s => s), 
-                undefined, // Skipping file
-                website
-            );
+            await updateUserProfile(formData);
             onClose();
-            alert("Profile updated successfully!");
         } catch (error) {
-            alert("Failed to update profile.");
+            alert("Protocol update failed.");
         } finally {
             setLoading(false);
         }
     };
 
+    const updateField = (field: keyof User, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
-            <form onSubmit={handleSave} className="space-y-4">
-                <div className="flex justify-center mb-6">
-                    <div className="relative group">
-                        <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                             <UserCircle className="w-12 h-12" />
+        <Modal isOpen={isOpen} onClose={onClose} title="Identity Reconfiguration">
+            <form onSubmit={handleSave} className="space-y-8 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+                {/* Preview Card */}
+                <div className="tactile-card bg-black text-white p-6 rounded-3xl relative overflow-hidden mb-10">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Terminal className="w-24 h-24" />
+                    </div>
+                    <div className="flex items-center gap-5 relative z-10">
+                        <div className="w-20 h-20 rounded-2xl bg-citrus border-2 border-white flex items-center justify-center text-black font-black text-3xl group cursor-pointer relative">
+                             {user?.name?.charAt(0)}
+                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition-opacity">
+                                <Camera className="w-6 h-6 text-white" />
+                             </div>
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black tracking-tighter">{formData.name || 'Anonymous User'}</h3>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-citrus">{user?.role} PROTOCOL ACTIVE</p>
                         </div>
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
-                    <input type="text" required className="w-full border p-2.5 rounded-lg" value={name} onChange={e => setName(e.target.value)} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                            <UserCircle className="w-3 h-3" /> Full Identity
+                        </label>
+                        <input 
+                            type="text" required 
+                            className="w-full border-2 border-black p-4 rounded-xl font-black bg-paper outline-none focus:bg-citrus/5 transition-all" 
+                            value={formData.name} onChange={e => updateField('name', e.target.value)} 
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                            <MapPin className="w-3 h-3" /> Location Node
+                        </label>
+                        <input 
+                            type="text" 
+                            className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" 
+                            placeholder="Bangalore, India"
+                            value={formData.location} onChange={e => updateField('location', e.target.value)} 
+                        />
+                    </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Bio / About</label>
-                    <textarea className="w-full border p-2.5 rounded-lg h-24 text-sm" placeholder="Tell us about yourself..." value={bio} onChange={e => setBio(e.target.value)} />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                         Personal Manifesto / Bio
+                    </label>
+                    <textarea 
+                        className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" 
+                        placeholder="Tell the grid who you are..." 
+                        value={formData.bio} onChange={e => updateField('bio', e.target.value)} 
+                    />
                 </div>
 
                 {user?.role === UserRole.STUDENT && (
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Skills (comma separated)</label>
-                        <input type="text" className="w-full border p-2.5 rounded-lg" placeholder="React, Python, SQL..." value={skills} onChange={e => setSkills(e.target.value)} />
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                    <GraduationCap className="w-3 h-3" /> University Hub
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" 
+                                    value={formData.university} onChange={e => updateField('university', e.target.value)} 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                    Major Focus
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" 
+                                    placeholder="Computer Science"
+                                    value={formData.major} onChange={e => updateField('major', e.target.value)} 
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                <Sparkles className="w-3 h-3" /> Technical Skillset (Comma Separated)
+                            </label>
+                            <input 
+                                type="text" 
+                                className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" 
+                                placeholder="React, Rust, AWS..."
+                                value={formData.skills?.join(', ')} onChange={e => updateField('skills', e.target.value.split(',').map(s => s.trim()))} 
+                            />
+                        </div>
                     </div>
                 )}
 
                 {user?.role === UserRole.COMPANY && (
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Website URL</label>
-                        <input type="url" className="w-full border p-2.5 rounded-lg" placeholder="https://company.com" value={website} onChange={e => setWebsite(e.target.value)} />
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                    <Building2 className="w-3 h-3" /> Entity Legal Name
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" 
+                                    value={formData.companyName} onChange={e => updateField('companyName', e.target.value)} 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                    <Users className="w-3 h-3" /> Internal Team Size
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" 
+                                    placeholder="50-100 Nodes"
+                                    value={formData.teamSize} onChange={e => updateField('teamSize', e.target.value)} 
+                                />
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50">
-                    {loading ? 'Saving...' : 'Save Profile'}
+                <div className="space-y-6 pt-6 border-t-2 border-black/5">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-black">Social Sync Protocols</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                <Linkedin className="w-3 h-3" /> LinkedIn
+                            </label>
+                            <input 
+                                type="url" 
+                                className="w-full border-2 border-black p-3 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all text-xs" 
+                                value={formData.linkedin} onChange={e => updateField('linkedin', e.target.value)} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                <Github className="w-3 h-3" /> GitHub
+                            </label>
+                            <input 
+                                type="url" 
+                                className="w-full border-2 border-black p-3 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all text-xs" 
+                                value={formData.github} onChange={e => updateField('github', e.target.value)} 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                                <Globe className="w-3 h-3" /> Website
+                            </label>
+                            <input 
+                                type="url" 
+                                className="w-full border-2 border-black p-3 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all text-xs" 
+                                value={formData.websiteUrl} onChange={e => updateField('websiteUrl', e.target.value)} 
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="tactile-btn w-full bg-black text-white py-6 rounded-2xl font-black text-xl uppercase tracking-widest flex items-center justify-center gap-4 hover:bg-forest disabled:opacity-50 mt-10 transition-all"
+                >
+                    {loading ? <Terminal className="w-6 h-6 animate-spin" /> : <><Save className="w-6 h-6" /> Sync to Grid</>}
                 </button>
             </form>
         </Modal>

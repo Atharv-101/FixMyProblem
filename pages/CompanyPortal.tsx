@@ -2,8 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info } from 'lucide-react';
-import { refineProblemDescription } from '../services/geminiService.ts';
+import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
@@ -11,7 +10,12 @@ import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import ProfileCard from '../components/ProfileCard.tsx';
 import PaymentGatewayModal from '../components/PaymentGatewayModal.tsx';
 
-const CompanyPortal: React.FC = () => {
+interface CompanyPortalProps {
+  // Added onProfileClick prop to resolve type error
+  onProfileClick: (id: string) => void;
+}
+
+const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
     const { user, problems, addProblem, acceptSolution, allUsers, editProblem, manualCloseProblem } = useStore();
     
     const [modalMode, setModalMode] = useState<'POST' | 'EDIT' | null>(null);
@@ -20,24 +24,36 @@ const CompanyPortal: React.FC = () => {
     const [showPaymentGateway, setShowPaymentGateway] = useState(false);
     
     const [currentProblem, setCurrentProblem] = useState<Problem | null>(null);
+    
+    // Detailed form state
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
+    const [expectedBehavior, setExpectedBehavior] = useState('');
+    const [currentBehavior, setCurrentBehavior] = useState('');
+    const [techStack, setTechStack] = useState('');
+    const [stepsToReproduce, setStepsToReproduce] = useState('');
+    const [impact, setImpact] = useState('');
     const [bounty, setBounty] = useState('');
     const [tags, setTags] = useState('');
     
     const [rating, setRating] = useState(5);
     const [feedback, setFeedback] = useState('');
 
-    const [isRefining, setIsRefining] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [showCompanyProfileCard, setShowCompanyProfileCard] = useState(false);
     
     const myProblems = problems.filter(p => p.companyId === user?.id);
     const topStudents = useMemo(() => allUsers.filter(u => u.role === UserRole.STUDENT).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 5), [allUsers]);
 
+    const resetForm = () => {
+        setTitle(''); setDesc(''); setBounty(''); setTags('');
+        setExpectedBehavior(''); setCurrentBehavior('');
+        setTechStack(''); setStepsToReproduce(''); setImpact('');
+    };
+
     const openPostModal = () => {
         setCurrentProblem(null);
-        setTitle(''); setDesc(''); setBounty(''); setTags('');
+        resetForm();
         setModalMode('POST');
     };
 
@@ -45,6 +61,11 @@ const CompanyPortal: React.FC = () => {
         setCurrentProblem(problem);
         setTitle(problem.title);
         setDesc(problem.description);
+        setExpectedBehavior(problem.expectedBehavior || '');
+        setCurrentBehavior(problem.currentBehavior || '');
+        setTechStack(problem.techStack || '');
+        setStepsToReproduce(problem.stepsToReproduce || '');
+        setImpact(problem.impact || '');
         setBounty(problem.bounty);
         setTags(problem.tags.join(', '));
         setModalMode('EDIT');
@@ -52,10 +73,22 @@ const CompanyPortal: React.FC = () => {
 
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const problemData = {
+            title,
+            description: desc,
+            expectedBehavior,
+            currentBehavior,
+            techStack,
+            stepsToReproduce,
+            impact,
+            bounty,
+            tags: tags.split(',').map(t => t.trim()).filter(t => t)
+        };
+
         if (modalMode === 'EDIT' && currentProblem) {
-            await editProblem(currentProblem.id, title, desc, bounty, tags.split(',').map(t => t.trim()));
+            await editProblem(currentProblem.id, problemData);
         } else {
-            addProblem(title, desc, bounty, tags.split(',').map(t => t.trim()));
+            await addProblem(problemData);
         }
         setModalMode(null);
     };
@@ -72,16 +105,6 @@ const CompanyPortal: React.FC = () => {
             setRating(5);
             setFeedback('');
         }
-    };
-
-    const handleAIRefine = async () => {
-        if (!desc) return;
-        setIsRefining(true);
-        try {
-            const refined = await refineProblemDescription(desc);
-            setDesc(refined);
-        } catch (error) { console.error("AI Refinement failed", error); }
-        setIsRefining(false);
     };
     
     const handleCloseProblem = async (problemId: string) => {
@@ -111,9 +134,14 @@ const CompanyPortal: React.FC = () => {
                            Company <span className="text-forest italic">Grid.</span>
                         </h1>
                         <div className="relative group cursor-help" onMouseEnter={() => setShowCompanyProfileCard(true)} onMouseLeave={() => setShowCompanyProfileCard(false)}>
-                            <button onClick={() => setIsProfileOpen(true)} className="text-sm md:text-lg font-black text-coral flex items-center group">
-                                <Edit2 className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:rotate-12 transition-transform" /> {user?.companyName} Profile
-                            </button>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <button onClick={() => setIsProfileOpen(true)} className="text-sm md:text-lg font-black text-coral flex items-center group text-left">
+                                    <Edit2 className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:rotate-12 transition-transform" /> Edit Profile
+                                </button>
+                                <button onClick={() => user && onProfileClick(user.id)} className="text-sm md:text-lg font-black text-forest flex items-center group text-left">
+                                    <Activity className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:scale-110 transition-transform" /> View Public Dossier
+                                </button>
+                            </div>
                             {showCompanyProfileCard && user && <ProfileCard user={user} onClose={() => setShowCompanyProfileCard(false)} positionClasses="top-full left-0 mt-4" />}
                         </div>
                     </div>
@@ -157,14 +185,14 @@ const CompanyPortal: React.FC = () => {
                                     <div className="space-y-4">
                                         {p.solutions?.map(s => (
                                             <div key={s.id} className={`tactile-card flex flex-col md:flex-row justify-between items-center p-5 md:p-6 rounded-2xl gap-4 ${s.isAccepted ? 'bg-citrus/10 border-forest' : 'bg-gray-50 border-black/5 shadow-none'}`}>
-                                                <div className="text-center md:text-left w-full md:w-auto">
-                                                   <span className="font-black text-black text-base md:text-lg block">{s.studentName}</span>
+                                                <div className="text-center md:text-left w-full md:w-auto cursor-pointer" onClick={() => onProfileClick(s.studentId)}>
+                                                   <span className="font-black text-black text-base md:text-lg block hover:text-coral transition-colors">{s.studentName}</span>
                                                    <span className="text-[9px] md:text-[10px] font-black uppercase text-gray-400 tracking-widest">Execution ID: {s.id.slice(-4)}</span>
                                                 </div>
                                                 <div className="flex gap-2 md:gap-4 w-full md:w-auto">
                                                     {s.attachmentUrl && <a href={s.attachmentUrl} target="_blank" className="flex-1 md:flex-none p-2.5 md:p-3 bg-white border-2 border-black rounded-xl hover:scale-110 transition-transform flex items-center justify-center"><Download className="w-4 h-4 md:w-5 md:h-5 text-black"/></a>}
                                                     {p.status === 'OPEN' && !s.isAccepted && <button onClick={() => setAcceptModalOpen(s)} className="flex-[2] md:flex-none tactile-btn bg-black text-white px-5 py-2 md:px-6 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-forest">Audit</button>}
-                                                    {s.isAccepted && <span className="flex-1 md:flex-none px-3 py-2 md:px-4 bg-forest text-citrus rounded-xl font-black text-[9px] md:text-xs uppercase tracking-widest flex items-center justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"><CheckCircle2 className="w-3 h-3 md:w-4 md:h-4"/> Accepted</span>}
+                                                    {s.isAccepted && <span className="flex-1 md:flex-none px-3 py-2 md:px-4 bg-forest text-citrus rounded-xl font-black text-[9px] md:text-xs uppercase tracking-widest flex items-center justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"><CheckCircle2 className="w-3 h-3 md:w-4 h-4"/> Accepted</span>}
                                                 </div>
                                             </div>
                                         ))}
@@ -177,7 +205,7 @@ const CompanyPortal: React.FC = () => {
                         ))}
                     </div>
 
-                    {/* Right Column: Rankings & Tips */}
+                    {/* Right Column: Rankings */}
                     <div className="space-y-8 md:space-y-12">
                         <div className="tactile-card bg-black text-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] overflow-hidden">
                             <div className="absolute top-0 right-0 w-24 h-24 md:w-32 md:h-32 bg-citrus/10 rounded-full -mr-12 -mt-12 md:-mr-16 md:-mt-16"></div>
@@ -186,15 +214,15 @@ const CompanyPortal: React.FC = () => {
                             </h2>
                             <div className="space-y-4 md:space-y-6 relative z-10">
                                 {topStudents.map((s, idx) => (
-                                    <div key={s.id} className="flex items-center justify-between py-3 md:py-4 border-b-2 border-white/5 last:border-0 group cursor-help">
+                                    <div key={s.id} className="flex items-center justify-between py-3 md:py-4 border-b-2 border-white/5 last:border-0 group cursor-pointer" onClick={() => onProfileClick(s.id)}>
                                         <div className="flex items-center">
                                             <span className="text-[10px] md:text-xs font-black text-coral mr-3 md:mr-4">0{idx+1}</span>
-                                            <div>
-                                                <div className="font-black text-base md:text-lg group-hover:text-citrus transition-colors">{s.name}</div>
-                                                <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-gray-500 mt-0.5">{s.university || 'Academic'}</div>
+                                            <div className="truncate max-w-[120px]">
+                                                <div className="font-black text-base md:text-lg group-hover:text-citrus transition-colors truncate">{s.name}</div>
+                                                <div className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-gray-500 mt-0.5 truncate">{s.university || 'Academic'}</div>
                                             </div>
                                         </div>
-                                        <div className="font-black text-citrus text-lg md:text-xl">{s.rating?.toFixed(1) || '0.0'}</div>
+                                        <div className="font-black text-citrus text-lg md:text-xl shrink-0">{s.rating?.toFixed(1) || '0.0'}</div>
                                     </div>
                                 ))}
                             </div>
@@ -202,42 +230,64 @@ const CompanyPortal: React.FC = () => {
                         </div>
 
                         <div className="tactile-card bg-citrus p-6 md:p-10 rounded-[2rem] md:rounded-[3rem]">
-                           <h3 className="text-lg md:text-xl font-black mb-3 md:mb-4">Pro Tip: 🪄</h3>
-                           <p className="font-bold text-black/70 leading-relaxed text-sm md:text-base">Ensure your descriptions are technical and clear. Better briefs get better results! 😁</p>
+                           <h3 className="text-lg md:text-xl font-black mb-3 md:mb-4">Mission Briefing 🪄</h3>
+                           <p className="font-bold text-black/70 leading-relaxed text-sm md:text-base">Structured information is the key to faster solutions. Provide error logs, reproduction steps, and clear impact analysis to attract top solvers. 😁</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <Modal isOpen={!!modalMode} onClose={() => setModalMode(null)} title={modalMode === 'EDIT' ? 'Audit Challenge' : 'Initialize'}>
-                <form onSubmit={handleFormSubmit} className="space-y-5">
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Challenge Title</label>
-                        <input required className="w-full border-2 border-black p-3.5 rounded-xl text-base md:text-lg font-black bg-paper outline-none focus:translate-x-0.5 focus:translate-y-0.5 transition-all" placeholder="Database Grid Optimization" value={title} onChange={e => setTitle(e.target.value)} />
-                    </div>
-                    
-                    <div className="space-y-1">
-                        <div className="flex justify-between items-center mb-1">
-                           <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Technical Brief</label>
-                           <button type="button" onClick={handleAIRefine} className="px-2.5 py-1 bg-black text-citrus rounded-lg font-black text-[8px] uppercase tracking-widest flex items-center hover:bg-forest transition-all">
-                                {isRefining ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1.5" />} Gemini Refine
-                           </button>
+            <Modal isOpen={!!modalMode} onClose={() => setModalMode(null)} title={modalMode === 'EDIT' ? 'Audit Protocol' : 'Deploy Challenge'}>
+                <form onSubmit={handleFormSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Terminal className="w-3 h-3"/> Short Title</label>
+                            <input required className="w-full border-2 border-black p-4 rounded-xl font-black bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="Database Grid Lag" value={title} onChange={e => setTitle(e.target.value)} />
                         </div>
-                        <textarea required className="w-full border-2 border-black p-4 rounded-xl h-40 md:h-48 font-bold bg-paper outline-none text-xs md:text-sm" placeholder="Provide deep technical context..." value={desc} onChange={e => setDesc(e.target.value)} />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                        <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Bounty Extraction</label>
-                            <input required className="w-full border-2 border-black p-3.5 rounded-xl font-black bg-paper outline-none" placeholder="₹50,000" value={bounty} onChange={e => setBounty(e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Grid Tags</label>
-                            <input className="w-full border-2 border-black p-3.5 rounded-xl font-black bg-paper outline-none" placeholder="Rust, K8s, AI" value={tags} onChange={e => setTags(e.target.value)} />
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><IndianRupee className="w-3 h-3"/> Bounty Amount</label>
+                            <input required className="w-full border-2 border-black p-4 rounded-xl font-black bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="₹25,000" value={bounty} onChange={e => setBounty(e.target.value)} />
                         </div>
                     </div>
 
-                    <button type="submit" className="tactile-btn w-full bg-black text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-base md:text-xl uppercase tracking-widest mt-2">Publish Grid</button>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Info className="w-3 h-3"/> Problem Summary</label>
+                        <textarea required className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="Briefly describe the roadblock..." value={desc} onChange={e => setDesc(e.target.value)} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><CheckCircle2 className="w-3 h-3"/> Expected Behavior</label>
+                            <textarea className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="What should be happening?" value={expectedBehavior} onChange={e => setExpectedBehavior(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><AlertTriangle className="w-3 h-3"/> Current Behavior / Error</label>
+                            <textarea className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="What is actually happening? (Errors, Logs...)" value={currentBehavior} onChange={e => setCurrentBehavior(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Cpu className="w-3 h-3"/> Tech Stack</label>
+                        <input className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="React, Node.js, AWS Lambda..." value={techStack} onChange={e => setTechStack(e.target.value)} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Layers className="w-3 h-3"/> Steps to Reproduce</label>
+                        <textarea className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="1. Go to... 2. Click... 3. Observe..." value={stepsToReproduce} onChange={e => setStepsToReproduce(e.target.value)} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Activity className="w-3 h-3"/> Impact / Priority</label>
+                            <input className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="Critical, High, Medium..." value={impact} onChange={e => setImpact(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Tag className="w-3 h-3"/> Search Tags</label>
+                            <input className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="Frontend, API, Performance..." value={tags} onChange={e => setTags(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <button type="submit" className="tactile-btn w-full bg-black text-white py-5 rounded-2xl font-black text-xl uppercase tracking-widest mt-4">Commit Protocol</button>
                 </form>
             </Modal>
 
@@ -288,7 +338,7 @@ const CompanyPortal: React.FC = () => {
             />
             
             <ProfileEditModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-            <ProblemDetailModal isOpen={showProblemDetailModal} onClose={() => setShowProblemDetailModal(false)} problem={currentProblem} />
+            <ProblemDetailModal isOpen={showProblemDetailModal} onClose={() => setShowProblemDetailModal(false)} problem={currentProblem} onProfileClick={onProfileClick} />
         </div>
     );
 };

@@ -22,14 +22,17 @@ import FAQ from '../components/landing/FAQ.tsx';
 import CTA from '../components/landing/CTA.tsx';
 import LandingFooter from '../components/landing/LandingFooter.tsx';
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD';
+// Updated ViewState to include all possible states from App.tsx
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW';
 
 interface LandingPageProps {
   onLoginClick: (role: UserRole) => void;
   onViewChange: (view: ViewState) => void;
+  // Added onProfileClick prop to resolve type error
+  onProfileClick: (id: string) => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, onProfileClick }) => {
   const { problems, allUsers } = useStore();
   const [scrolled, setScrolled] = useState(false);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
@@ -84,7 +87,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
 
   return (
     <div className="min-h-screen font-sans bg-white text-gray-900 selection:bg-blue-100 selection:text-blue-900">
-      <Navbar onViewChange={onViewChange} transparent={!scrolled} />
+      <Navbar onViewChange={onViewChange} transparent={!scrolled} onProfileClick={onProfileClick} />
 
       <Hero onLoginClick={onLoginClick} stats={stats} />
       
@@ -109,6 +112,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
         onProfileLeave={handleProfileLeave}
         showProfileCard={showProfileCard}
         hoveredUser={hoveredUser}
+        onProfileClick={onProfileClick}
       />
       
       <LeaderboardSnippet 
@@ -118,6 +122,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
         onProfileLeave={handleProfileLeave}
         showProfileCard={showProfileCard}
         hoveredUser={hoveredUser}
+        onProfileClick={onProfileClick}
       />
       
       <Testimonials />
@@ -133,6 +138,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange })
         onClose={() => setShowProblemDetailModal(false)}
         problem={currentProblemForDetails}
         onSolveClick={handleSolveFromDetails}
+        onProfileClick={onProfileClick}
       />
     </div>
   );

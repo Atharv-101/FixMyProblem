@@ -9,7 +9,12 @@ import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import ProfileCard from '../components/ProfileCard.tsx';
 
-const StudentPortal: React.FC = () => {
+interface StudentPortalProps {
+  // Added onProfileClick prop to resolve type error
+  onProfileClick: (id: string) => void;
+}
+
+const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
     const { user, allUsers, problems, addSolution, payments } = useStore();
     const [selectedProblemIdForSubmission, setSelectedProblemIdForSubmission] = useState<string | null>(null);
     const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
@@ -76,9 +81,10 @@ const StudentPortal: React.FC = () => {
                            Solver <span className="text-coral italic">Workspace.</span>
                         </h1>
                         <div 
-                          className="flex items-center gap-3 md:gap-4 relative group cursor-help"
+                          className="flex items-center gap-3 md:gap-4 relative group cursor-pointer"
                           onMouseEnter={() => setShowStudentProfileCard(true)}
                           onMouseLeave={() => setShowStudentProfileCard(false)}
+                          onClick={() => currentUserData && onProfileClick(currentUserData.id)}
                         >
                             <div className="w-10 h-10 md:w-14 md:h-14 rounded-2xl border-2 border-black bg-citrus overflow-hidden flex items-center justify-center font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                                {currentUserData?.profilePicUrl ? <img src={currentUserData.profilePicUrl} className="w-full h-full object-cover" /> : currentUserData?.name.charAt(0)}
@@ -188,6 +194,7 @@ const StudentPortal: React.FC = () => {
                 onClose={() => setShowProblemDetailModal(false)}
                 problem={currentProblemForDetails}
                 onSolveClick={handleSolveFromDetails}
+                onProfileClick={onProfileClick}
             />
 
            <Modal isOpen={!!selectedProblemIdForSubmission} onClose={() => setSelectedProblemIdForSubmission(null)} title="Deploy Protocol">
