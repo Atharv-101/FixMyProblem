@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { Activity, ArrowUpRight, Cpu, IndianRupee, Tag, Clock } from 'lucide-react';
 import { Problem, User } from '../../types';
-import ProfileCard from '../ProfileCard';
 
 interface LiveFeedProps {
   problems: Problem[];
@@ -12,7 +12,6 @@ interface LiveFeedProps {
   onProfileLeave: () => void;
   showProfileCard: string | null;
   hoveredUser: User | null;
-  // Added onProfileClick prop
   onProfileClick: (id: string) => void;
 }
 
@@ -51,15 +50,12 @@ const LiveFeed: React.FC<LiveFeedProps> = ({
                 <div className="flex justify-between items-start mb-8">
                   <div 
                     className="flex items-center relative"
-                    onMouseEnter={() => onProfileHover(prob.companyId)}
-                    onMouseLeave={onProfileLeave}
                     onClick={(e) => { e.stopPropagation(); onProfileClick(prob.companyId); }}
                   >
                      <div className="w-10 h-10 rounded-xl bg-gray-50 border-2 border-black flex items-center justify-center mr-3 font-black text-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         {prob.companyName.charAt(0)}
                      </div>
                      <span className="text-black text-xs font-black uppercase tracking-widest hover:text-coral transition-colors">{prob.companyName}</span>
-                     {showProfileCard === prob.companyId && hoveredUser && <ProfileCard user={hoveredUser} onClose={onProfileLeave} positionClasses="top-full left-0 mt-2" />}
                   </div>
                   <div className="text-right">
                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Bounty</p>

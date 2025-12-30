@@ -3,7 +3,6 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, User } from '../types.ts';
 import { Search, Users, GraduationCap, Building2, Star, CheckCircle2, Terminal, Zap, Globe, Github, Linkedin } from 'lucide-react';
-import ProfileCard from '../components/ProfileCard.tsx';
 
 interface UsersDirectoryProps {
   onProfileClick: (id: string) => void;
@@ -13,8 +12,6 @@ const UsersDirectory: React.FC<UsersDirectoryProps> = ({ onProfileClick }) => {
   const { allUsers } = useStore();
   const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.STUDENT);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showProfileCard, setShowProfileCard] = useState<string | null>(null);
-  const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
   const filteredUsers = useMemo(() => {
     return allUsers
@@ -26,16 +23,6 @@ const UsersDirectory: React.FC<UsersDirectoryProps> = ({ onProfileClick }) => {
       )
       .sort((a, b) => (b.rating || 0) - (a.rating || 0));
   }, [allUsers, selectedRole, searchQuery]);
-
-  const handleProfileHover = (user: User) => {
-    setHoveredUser(user);
-    setShowProfileCard(user.id);
-  };
-
-  const handleProfileLeave = () => {
-    setShowProfileCard(null);
-    setHoveredUser(null);
-  };
 
   return (
     <div className="min-h-screen bg-paper pt-32 px-4 md:px-10 pb-20 relative overflow-hidden">
@@ -93,8 +80,6 @@ const UsersDirectory: React.FC<UsersDirectoryProps> = ({ onProfileClick }) => {
             <div 
               key={u.id} 
               onClick={() => onProfileClick(u.id)}
-              onMouseEnter={() => handleProfileHover(u)}
-              onMouseLeave={handleProfileLeave}
               className={`tactile-card p-8 rounded-[2.5rem] bg-white cursor-pointer group flex flex-col items-center text-center relative transition-all duration-300 hover:bg-paper ${idx % 2 === 0 ? 'rotate-[0.5deg]' : 'rotate-[-0.5deg]'} hover:rotate-0`}
             >
               <div className="sticker-tape opacity-20"></div>
@@ -154,10 +139,6 @@ const UsersDirectory: React.FC<UsersDirectoryProps> = ({ onProfileClick }) => {
                     View Dossier <CheckCircle2 className="w-3 h-3" />
                  </button>
               </div>
-
-              {showProfileCard === u.id && hoveredUser && (
-                <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="top-full left-0 mt-4" />
-              )}
             </div>
           ))}
         </div>

@@ -7,7 +7,6 @@ import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
-import ProfileCard from '../components/ProfileCard.tsx';
 import PaymentGatewayModal from '../components/PaymentGatewayModal.tsx';
 import { refineProblemDescription } from '../services/geminiService.ts';
 
@@ -41,7 +40,6 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
     const [feedback, setFeedback] = useState('');
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [showCompanyProfileCard, setShowCompanyProfileCard] = useState(false);
     
     const myProblems = problems.filter(p => p.companyId === user?.id);
     const topStudents = useMemo(() => allUsers.filter(u => u.role === UserRole.STUDENT).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 5), [allUsers]);
@@ -142,7 +140,7 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                         <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-black tracking-tighter leading-none mb-4">
                            Company <span className="text-forest italic">Grid.</span>
                         </h1>
-                        <div className="relative group cursor-help" onMouseEnter={() => setShowCompanyProfileCard(true)} onMouseLeave={() => setShowCompanyProfileCard(false)}>
+                        <div className="relative group">
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <button onClick={() => setIsProfileOpen(true)} className="text-sm md:text-lg font-black text-coral flex items-center group text-left">
                                     <Edit2 className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:rotate-12 transition-transform" /> Edit Profile
@@ -151,7 +149,6 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                                     <Activity className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:scale-110 transition-transform" /> View Public Dossier
                                 </button>
                             </div>
-                            {showCompanyProfileCard && user && <ProfileCard user={user} onClose={() => setShowCompanyProfileCard(false)} positionClasses="top-full left-0 mt-4" />}
                         </div>
                     </div>
                     <button onClick={openPostModal} className="tactile-btn w-full md:w-auto px-8 py-4 md:px-10 md:py-5 bg-black text-white rounded-xl md:rounded-2xl font-black text-base md:text-xl flex items-center justify-center shadow-md hover:bg-forest transition-all">

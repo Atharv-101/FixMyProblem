@@ -5,7 +5,6 @@ import { UserRole, Problem, User } from '../types.ts';
 
 import Navbar from '../components/Navbar.tsx';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
-import ProfileCard from '../components/ProfileCard.tsx';
 
 // Modular Sections
 import Hero from '../components/landing/Hero.tsx';
@@ -36,9 +35,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
   const [scrolled, setScrolled] = useState(false);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
-
-  const [showProfileCard, setShowProfileCard] = useState<string | null>(null);
-  const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -73,17 +69,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
     onLoginClick(UserRole.STUDENT);
   };
 
-  const handleProfileHover = (userId: string) => {
-    const userToHover = allUsers.find(u => u.id === userId);
-    setHoveredUser(userToHover || null);
-    setShowProfileCard(userId);
-  };
-
-  const handleProfileLeave = () => {
-    setShowProfileCard(null);
-    setHoveredUser(null);
-  };
-
   return (
     <div className="min-h-screen font-sans bg-white text-gray-900 selection:bg-blue-100 selection:text-blue-900">
       <Navbar onViewChange={onViewChange} transparent={!scrolled} onProfileClick={onProfileClick} />
@@ -107,20 +92,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
         allUsers={allUsers} 
         onViewChange={onViewChange}
         onProblemClick={handleOpenProblemDetails}
-        onProfileHover={handleProfileHover}
-        onProfileLeave={handleProfileLeave}
-        showProfileCard={showProfileCard}
-        hoveredUser={hoveredUser}
+        onProfileHover={() => {}}
+        onProfileLeave={() => {}}
+        showProfileCard={null}
+        hoveredUser={null}
         onProfileClick={onProfileClick}
       />
       
       <LeaderboardSnippet 
         topStudents={topStudents}
         onViewChange={onViewChange}
-        onProfileHover={handleProfileHover}
-        onProfileLeave={handleProfileLeave}
-        showProfileCard={showProfileCard}
-        hoveredUser={hoveredUser}
+        onProfileHover={() => {}}
+        onProfileLeave={() => {}}
+        showProfileCard={null}
+        hoveredUser={null}
         onProfileClick={onProfileClick}
       />
       

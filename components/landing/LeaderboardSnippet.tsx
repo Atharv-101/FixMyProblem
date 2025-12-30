@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { Trophy, Star, ArrowUpRight } from 'lucide-react';
 import { User } from '../../types';
-import ProfileCard from '../ProfileCard';
 
 interface LeaderboardSnippetProps {
   topStudents: User[];
@@ -10,7 +10,6 @@ interface LeaderboardSnippetProps {
   onProfileLeave: () => void;
   showProfileCard: string | null;
   hoveredUser: User | null;
-  // Added onProfileClick prop
   onProfileClick: (id: string) => void;
 }
 
@@ -39,18 +38,15 @@ const LeaderboardSnippet: React.FC<LeaderboardSnippetProps> = ({
                        </div>
                        <div 
                          className="flex-1 relative cursor-pointer"
-                         onMouseEnter={() => onProfileHover(s.id)}
-                         onMouseLeave={onProfileLeave}
                          onClick={() => onProfileClick(s.id)}
                        >
-                           <h3 className="font-bold text-lg md:text-xl text-gray-900 hover:underline cursor-help">{s.name}</h3>
+                           <h3 className="font-bold text-lg md:text-xl text-gray-900 hover:underline">{s.name}</h3>
                            <p className="text-gray-500 text-sm">{s.university}</p>
                            <div className="flex items-center text-blue-600 mt-2">
                                <Star className="w-4 h-4 fill-blue-600 mr-1" />
                                <span className="font-bold text-md">{s.rating?.toFixed(1) || '0.0'}</span>
                                <span className="text-gray-400 text-xs ml-2">{s.solvedCount} Solved</span>
                            </div>
-                           {showProfileCard === s.id && hoveredUser && <ProfileCard user={hoveredUser} onClose={onProfileLeave} positionClasses="bottom-full left-0 mb-2" />}
                        </div>
                    </div>
                ))}

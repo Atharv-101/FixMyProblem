@@ -9,7 +9,6 @@ import {
   BrainCircuit, Layout, Zap, Edit2, Eye, XCircle, Download, FileArchive, ArrowUpRight
 } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
-import ProfileCard from '../components/ProfileCard.tsx';
 import Modal from '../components/Modal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
 import { refineProblemDescription } from '../services/geminiService.ts';
@@ -43,9 +42,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM');
   const [tags, setTags] = useState('');
-
-  const [showProfileCard, setShowProfileCard] = useState<string | null>(null);
-  const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 
   const stats = useMemo(() => {
     const totalUsers = allUsers.length;
@@ -184,16 +180,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
     setShowProblemDetailModal(true);
   };
 
-  const handleProfileHover = (user: User) => {
-    setHoveredUser(user);
-    setShowProfileCard(user.id);
-  };
-
-  const handleProfileLeave = () => {
-    setShowProfileCard(null);
-    setHoveredUser(null);
-  };
-
   return (
     <div className="min-h-screen bg-transparent pt-32 px-4 pb-12">
       <div className="max-w-7xl mx-auto">
@@ -302,18 +288,15 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                        <td className="p-6 font-bold text-black">
                           <div 
                             className="flex items-center relative cursor-pointer"
-                            onMouseEnter={() => handleProfileHover(u)}
-                            onMouseLeave={handleProfileLeave}
                             onClick={() => onProfileClick(u.id)}
                           >
                               <div className="w-12 h-12 rounded-xl bg-paper border-2 border-black flex items-center justify-center mr-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] overflow-hidden font-black">
                                 {u.profilePicUrl ? <img src={u.profilePicUrl} className="w-full h-full object-cover" /> : u.name.charAt(0)}
                               </div>
-                              <div className="cursor-help">
+                              <div className="cursor-pointer">
                                   <div className="text-lg leading-tight group-hover:text-coral transition-colors">{u.name}</div>
                                   <span className="text-xs text-gray-400 font-bold">{u.email}</span>
                               </div>
-                              {showProfileCard === u.id && hoveredUser && <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="bottom-full left-0 mb-4" />}
                           </div>
                        </td>
                        <td className="p-6">

@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole } from '../types.ts';
 import { LogOut, Code2, Menu, X, ArrowRight, Home, LayoutDashboard, Trophy, PhoneCall, BrainCircuit, Users } from 'lucide-react';
-import ProfileCard from './ProfileCard.tsx';
 
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'SIMULATIONS' | 'USERS_DIRECTORY';
 
@@ -15,7 +14,6 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileClick }) => {
   const { user, logout } = useStore();
-  const [showProfileCard, setShowProfileCard] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -67,18 +65,13 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
             
             {user ? (
               <div className="flex items-center space-x-6">
-                <div 
-                  className="relative" 
-                  onMouseEnter={() => setShowProfileCard(true)} 
-                  onMouseLeave={() => setShowProfileCard(false)}
-                >
+                <div className="relative">
                   <div 
                     onClick={() => handleNav('DASHBOARD')}
                     className="w-11 h-11 rounded-2xl bg-citrus border-2 border-black overflow-hidden flex items-center justify-center font-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] cursor-pointer hover:scale-110 transition-transform"
                   >
                     {user.profilePicUrl ? <img src={user.profilePicUrl} className="w-full h-full object-cover" /> : user.name.charAt(0)}
                   </div>
-                  {showProfileCard && <ProfileCard user={user} onClose={() => setShowProfileCard(false)} positionClasses="top-full right-0 mt-6" />}
                 </div>
                 <button onClick={logout} className="p-2.5 rounded-xl border-2 border-transparent text-gray-400 hover:text-red-600 hover:border-black transition-all">
                   <LogOut className="h-5 w-5" />

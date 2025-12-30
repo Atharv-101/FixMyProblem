@@ -7,7 +7,6 @@ import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
-import ProfileCard from '../components/ProfileCard.tsx';
 
 interface StudentPortalProps {
   onProfileClick: (id: string) => void;
@@ -24,7 +23,6 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [showStudentProfileCard, setShowStudentProfileCard] = useState(false);
     
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -99,8 +97,6 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                         </h1>
                         <div 
                           className="flex items-center gap-3 md:gap-4 relative group cursor-pointer"
-                          onMouseEnter={() => setShowStudentProfileCard(true)}
-                          onMouseLeave={() => setShowStudentProfileCard(false)}
                           onClick={() => currentUserData && onProfileClick(currentUserData.id)}
                         >
                             <div className="w-10 h-10 md:w-14 md:h-14 rounded-2xl border-2 border-black bg-citrus overflow-hidden flex items-center justify-center font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -110,7 +106,6 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                                 <span className="text-lg md:text-2xl font-black hover:text-coral transition-colors">{currentUserData?.name}</span>
                                 <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-gray-400">{currentUserData?.university || 'Academic'} Grid</div>
                             </div>
-                            {showStudentProfileCard && currentUserData && <ProfileCard user={currentUserData} onClose={() => setShowStudentProfileCard(false)} positionClasses="top-full left-0 mt-4" />}
                         </div>
                     </div>
                     

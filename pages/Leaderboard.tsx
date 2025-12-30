@@ -3,7 +3,6 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, User, SkillLevel } from '../types.ts';
 import { Trophy, Star, Zap, Flame, Terminal, Cpu, Info, Target, Filter, ChevronDown } from 'lucide-react';
-import ProfileCard from '../components/ProfileCard.tsx';
 
 interface LeaderboardProps {
   onProfileClick: (id: string) => void;
@@ -39,19 +38,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onProfileClick }) => {
     allUsers.forEach(u => u.skills?.forEach(s => stacks.add(s)));
     return Array.from(stacks);
   }, [allUsers]);
-
-  const [showProfileCard, setShowProfileCard] = useState<string | null>(null);
-  const [hoveredUser, setHoveredUser] = useState<User | null>(null);
-
-  const handleProfileHover = (user: User) => {
-    setHoveredUser(user);
-    setShowProfileCard(user.id);
-  };
-
-  const handleProfileLeave = () => {
-    setShowProfileCard(null);
-    setHoveredUser(null);
-  };
 
   return (
       <div className="min-h-screen bg-paper pt-32 px-4 md:px-10 pb-20 relative overflow-hidden">
@@ -113,8 +99,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onProfileClick }) => {
 
                           <div 
                             className="flex-1 md:ml-6 flex flex-col md:flex-row items-center text-center md:text-left relative group/info cursor-pointer"
-                            onMouseEnter={() => handleProfileHover(s)}
-                            onMouseLeave={handleProfileLeave}
                             onClick={() => onProfileClick(s.id)}
                           >
                               <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] border-4 border-black bg-white overflow-hidden shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:rotate-3 transition-transform relative mb-4 md:mb-0">
@@ -139,7 +123,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ onProfileClick }) => {
                                     ))}
                                 </div>
                               </div>
-                              {showProfileCard === s.id && hoveredUser && <ProfileCard user={hoveredUser} onClose={handleProfileLeave} positionClasses="bottom-full left-0 mb-4" />}
                           </div>
 
                           <div className="flex gap-6 mt-6 md:mt-0 items-center">
