@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, User } from '../types.ts';
-import { UserCircle, Terminal, Globe, Linkedin, Github, MapPin, GraduationCap, Building2, Users, Save, Sparkles, Camera } from 'lucide-react';
+import { UserCircle, Terminal, Globe, Linkedin, Github, MapPin, GraduationCap, Building2, Users, Save, Sparkles, Camera, Image as ImageIcon } from 'lucide-react';
 import Modal from './Modal.tsx';
 
 interface ProfileEditModalProps {
@@ -22,6 +22,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
             setFormData({
                 name: user.name || '',
                 bio: user.bio || '',
+                profilePicUrl: user.profilePicUrl || '',
                 skills: user.skills || [],
                 websiteUrl: user.websiteUrl || '',
                 linkedin: user.linkedin || '',
@@ -62,8 +63,12 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
                         <Terminal className="w-24 h-24" />
                     </div>
                     <div className="flex items-center gap-5 relative z-10">
-                        <div className="w-20 h-20 rounded-2xl bg-citrus border-2 border-white flex items-center justify-center text-black font-black text-3xl group cursor-pointer relative">
-                             {user?.name?.charAt(0)}
+                        <div className="w-20 h-20 rounded-2xl bg-citrus border-2 border-white flex items-center justify-center text-black font-black text-3xl overflow-hidden group relative">
+                             {formData.profilePicUrl ? (
+                                <img src={formData.profilePicUrl} className="w-full h-full object-cover" alt="Preview" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                             ) : (
+                                <span>{formData.name?.charAt(0) || user?.name?.charAt(0)}</span>
+                             )}
                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition-opacity">
                                 <Camera className="w-6 h-6 text-white" />
                              </div>
@@ -73,6 +78,20 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
                             <p className="text-[10px] font-black uppercase tracking-widest text-citrus">{user?.role} PROTOCOL ACTIVE</p>
                         </div>
                     </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1 flex items-center gap-2">
+                        <ImageIcon className="w-3 h-3" /> Profile Image URL
+                    </label>
+                    <input 
+                        type="url" 
+                        placeholder="https://images.unsplash.com/photo-..."
+                        className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all text-sm" 
+                        value={formData.profilePicUrl} 
+                        onChange={e => updateField('profilePicUrl', e.target.value)} 
+                    />
+                    <p className="text-[9px] font-bold text-gray-400 uppercase px-1">Paste a direct image link (Unsplash, Imgur, etc.)</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole } from '../types.ts';
-import { LogOut, Code2, Menu, X, ArrowRight, Home, LayoutDashboard, Trophy, PhoneCall } from 'lucide-react';
+import { LogOut, Code2, Menu, X, ArrowRight, Home, LayoutDashboard, Trophy, PhoneCall, BrainCircuit, Users } from 'lucide-react';
 import ProfileCard from './ProfileCard.tsx';
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404';
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'SIMULATIONS' | 'USERS_DIRECTORY';
 
 interface NavbarProps {
   onViewChange: (view: ViewState) => void;
@@ -60,7 +60,9 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
           
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
-            <button onClick={() => handleNav('LEADERBOARD')} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-black transition-colors">Solvers</button>
+            <button onClick={() => handleNav('SIMULATIONS')} className="text-[10px] font-black uppercase tracking-[0.2em] text-forest flex items-center gap-1 hover:text-black transition-colors"><BrainCircuit className="w-3.5 h-3.5"/> Practice</button>
+            <button onClick={() => handleNav('USERS_DIRECTORY')} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-black transition-colors flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Users</button>
+            <button onClick={() => handleNav('LEADERBOARD')} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-black transition-colors flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" /> Leaderboard</button>
             <button onClick={() => handleNav('CONTACT')} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-black transition-colors">Contact</button>
             
             {user ? (
@@ -136,16 +138,22 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
               <Home className="w-10 h-10 text-coral" /> Home
             </button>
             <button 
+              onClick={() => handleNav('SIMULATIONS')} 
+              className="text-5xl font-black text-black text-left tracking-tighter flex items-center gap-4 hover:text-forest transition-colors"
+            >
+              <BrainCircuit className="w-10 h-10 text-forest" /> Practice Hub
+            </button>
+            <button 
+              onClick={() => handleNav('USERS_DIRECTORY')} 
+              className="text-5xl font-black text-black text-left tracking-tighter flex items-center gap-4 hover:text-citrus transition-colors"
+            >
+              <Users className="w-10 h-10 text-citrus" /> Users
+            </button>
+            <button 
               onClick={() => handleNav('LEADERBOARD')} 
               className="text-5xl font-black text-black text-left tracking-tighter flex items-center gap-4 hover:text-coral transition-colors"
             >
-              <Trophy className="w-10 h-10 text-citrus" /> Rankings
-            </button>
-            <button 
-              onClick={() => handleNav('CONTACT')} 
-              className="text-5xl font-black text-black text-left tracking-tighter flex items-center gap-4 hover:text-coral transition-colors"
-            >
-              <PhoneCall className="w-10 h-10 text-forest" /> Support
+              <Trophy className="w-10 h-10 text-coral" /> Leaderboard
             </button>
             
             <div className="w-full h-1 bg-black/10 my-6"></div>
@@ -166,12 +174,6 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
                   className="text-5xl font-black text-forest text-left tracking-tighter flex items-center gap-4"
                 >
                   <LayoutDashboard className="w-10 h-10" /> Workspace
-                </button>
-                <button 
-                  onClick={() => handleNav('PAYMENT_HISTORY')} 
-                  className="text-4xl font-black text-black text-left tracking-tighter"
-                >
-                  Payout History
                 </button>
                 <button 
                   onClick={logout} 

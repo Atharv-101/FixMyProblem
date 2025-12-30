@@ -5,33 +5,40 @@ import { UserRole, User } from '../types.ts';
 import { 
   ArrowLeft, Terminal, Shield, GraduationCap, Building2, MapPin, 
   Linkedin, Github, Globe, Star, Zap, Briefcase, Calendar, 
-  CheckCircle2, IndianRupee, Activity, Mail, Loader2, ShieldCheck
+  CheckCircle2, IndianRupee, Activity, Mail, Loader2, ShieldCheck, Award, Flame, Edit2
 } from 'lucide-react';
+import ProfileEditModal from '../components/ProfileEditModal.tsx';
 
 interface ProfileDossierProps {
-  userId: string;
+  userId?: string; // Optional if using username slug
   onBack: () => void;
 }
 
 const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
-  const { allUsers, problems, fetchSingleUser } = useStore();
+  const { user, allUsers, problems, fetchSingleUser, fetchUserByUsername } = useStore();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   useEffect(() => {
     const loadProfile = async () => {
-      const local = allUsers.find(u => u.id === userId);
-      if (local) {
-        setProfile(local);
-        setLoading(false);
-      } else {
-        const remote = await fetchSingleUser(userId);
-        setProfile(remote);
-        setLoading(false);
+      // Logic to detect if we have ID or need to check URL for username slug
+      const path = window.location.pathname;
+      const usernameFromUrl = path.startsWith('/u/') ? path.split('/u/')[1] : null;
+
+      if (userId) {
+          const local = allUsers.find(u => u.id === userId);
+          if (local) { setProfile(local); setLoading(false); return; }
+          const remote = await fetchSingleUser(userId);
+          setProfile(remote);
+      } else if (usernameFromUrl) {
+          const remote = await fetchUserByUsername(usernameFromUrl);
+          setProfile(remote);
       }
+      setLoading(false);
     };
     loadProfile();
-  }, [userId, allUsers, fetchSingleUser]);
+  }, [userId, allUsers, fetchSingleUser, fetchUserByUsername]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-paper">
@@ -50,9 +57,12 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
 
   const isStudent = profile.role === UserRole.STUDENT;
   const companyProblems = problems.filter(p => p.companyId === userId);
+  const isOwnProfile = user?.id === profile.id;
   
   // Calculate stats
-  const solvedChallenges = isStudent ? profile.solvedCount || 0 : 0;
+  const bountySolves = profile.solvedCount || 0;
+  const simSolves = profile.simSolvedCount || 0;
+  const totalSolves = bountySolves + simSolves;
   const averageRating = profile.rating || 0;
   const joinedDate = profile.joinedAt ? new Date(profile.joinedAt).toLocaleDateString() : 'N/A';
 
@@ -64,12 +74,23 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
       </div>
 
       <div className="max-w-6xl mx-auto">
-        <button 
-          onClick={onBack}
-          className="tactile-btn mb-12 px-6 py-3 bg-white border-2 border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-gray-50"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Grid
-        </button>
+        <div className="flex justify-between items-center mb-12">
+            <button 
+                onClick={onBack}
+                className="tactile-btn px-6 py-3 bg-white border-2 border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-gray-50"
+            >
+                <ArrowLeft className="w-4 h-4" /> Back to Grid
+            </button>
+
+            {isOwnProfile && (
+                <button 
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="tactile-btn px-6 py-3 bg-citrus border-2 border-black rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                >
+                    <Edit2 className="w-4 h-4" /> Reconfigure Identity
+                </button>
+            )}
+        </div>
 
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Identity Column */}
@@ -79,19 +100,15 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                  <Zap className="w-32 h-32 text-citrus fill-citrus" />
               </div>
               <div className="flex flex-col items-center text-center relative z-10">
-                <div className="w-32 h-32 rounded-[2rem] bg-citrus border-4 border-white flex items-center justify-center text-black font-black text-5xl mb-6 shadow-xl">
-                   {profile.name.charAt(0)}
+                <div className="w-32 h-32 rounded-[2rem] bg-citrus border-4 border-white flex items-center justify-center text-black font-black text-5xl mb-6 shadow-xl overflow-hidden">
+                   {profile.profilePicUrl ? <img src={profile.profilePicUrl} className="w-full h-full object-cover" /> : profile.name.charAt(0)}
                 </div>
                 <h1 className="text-3xl font-black tracking-tighter mb-2">{profile.name}</h1>
+                <p className="text-[10px] font-black uppercase text-citrus tracking-[0.3em] mb-4">/u/{profile.username}</p>
                 <div className="flex flex-col gap-2 items-center">
                     <span className={`px-4 py-1.5 rounded-full border-2 border-white font-black text-[10px] uppercase tracking-widest ${isStudent ? 'bg-forest text-citrus' : 'bg-coral text-white'}`}>
                     {profile.role} Protocol
                     </span>
-                    {isStudent && (
-                        <span className="flex items-center gap-1.5 text-citrus text-[9px] font-black uppercase tracking-widest px-3 py-1 bg-white/10 rounded-lg border border-white/20">
-                            <ShieldCheck className="w-3 h-3" /> Verified Solver
-                        </span>
-                    )}
                 </div>
                 
                 {profile.location && (
@@ -107,11 +124,33 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                     <p className="text-2xl font-black text-citrus flex items-center justify-center">{averageRating.toFixed(1)} <Star className="w-4 h-4 ml-1 fill-citrus" /></p>
                  </div>
                  <div className="text-center">
-                    <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest mb-1">{isStudent ? 'Solved' : 'Posted'}</p>
-                    <p className="text-2xl font-black text-white">{isStudent ? solvedChallenges : companyProblems.length}</p>
+                    <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest mb-1">{isStudent ? 'Total Solves' : 'Posted'}</p>
+                    <p className="text-2xl font-black text-white">{isStudent ? totalSolves : companyProblems.length}</p>
                  </div>
               </div>
             </div>
+
+            {/* Badges System Visualization */}
+            {isStudent && profile.badges && profile.badges.length > 0 && (
+                <div className="tactile-card p-8 bg-paper rounded-[2rem] border-2 border-black">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6 flex items-center gap-2">
+                        <Award className="w-4 h-4 text-coral" /> Verified Badges
+                    </h4>
+                    <div className="flex flex-wrap gap-4">
+                        {profile.badges.map(badge => (
+                            <div key={badge.id} className="group relative">
+                                <div className="w-16 h-16 bg-white border-2 border-black rounded-2xl flex items-center justify-center text-3xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:scale-110 transition-transform cursor-help">
+                                    {badge.icon}
+                                </div>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 p-3 bg-black text-white text-[9px] rounded-xl font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-center">
+                                    <div className="text-citrus mb-1">{badge.name}</div>
+                                    <div className="opacity-60">{badge.description}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="tactile-card p-8 bg-white rounded-[2rem] border-2 border-black space-y-6">
                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sync Details</h4>
@@ -130,11 +169,6 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                       <Github className="w-4 h-4" /> <span className="text-sm font-bold">GitHub Archive</span>
                    </a>
                  )}
-                 {profile.websiteUrl && (
-                   <a href={profile.websiteUrl} target="_blank" className="flex items-center gap-3 text-black hover:text-coral transition-colors">
-                      <Globe className="w-4 h-4" /> <span className="text-sm font-bold">Web Node</span>
-                   </a>
-                 )}
                  <div className="flex items-center gap-3 text-gray-400 pt-4 border-t border-black/5">
                     <Calendar className="w-4 h-4" /> 
                     <span className="text-[10px] font-black uppercase tracking-widest">Joined: {joinedDate}</span>
@@ -145,12 +179,32 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
 
           {/* Intel Column */}
           <div className="lg:col-span-2 space-y-10">
+            {/* Stats Overview */}
+            {isStudent && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="tactile-card p-8 bg-citrus rounded-[2rem] border-2 border-black flex justify-between items-center">
+                        <div>
+                            <p className="text-[10px] font-black uppercase text-black/40 tracking-widest mb-1">Practice verified</p>
+                            <p className="text-4xl font-black text-black">{simSolves}</p>
+                        </div>
+                        <Zap className="w-10 h-10 text-black/20" />
+                    </div>
+                    <div className="tactile-card p-8 bg-forest text-white rounded-[2rem] border-2 border-black flex justify-between items-center">
+                        <div>
+                            <p className="text-[10px] font-black uppercase text-white/40 tracking-widest mb-1">Bounty Extractions</p>
+                            <p className="text-4xl font-black text-citrus">{bountySolves}</p>
+                        </div>
+                        <Flame className="w-10 h-10 text-white/20" />
+                    </div>
+                </div>
+            )}
+
             <section>
               <h2 className="text-sm font-black uppercase tracking-widest text-black flex items-center gap-3 mb-6">
                  <Activity className="w-5 h-5 text-coral" /> Technical Intel
               </h2>
               <div className="tactile-card p-10 bg-white rounded-[3rem] border-2 border-black">
-                <h3 className="text-xl font-black mb-4">Briefing</h3>
+                <h3 className="text-xl font-black mb-4">Manifesto</h3>
                 <p className="text-gray-600 font-bold leading-relaxed whitespace-pre-wrap mb-10 italic">
                   "{profile.bio || "No technical manifesto recorded for this entity."}"
                 </p>
@@ -158,23 +212,18 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-4">
                      <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-2">
-                        {isStudent ? <GraduationCap className="w-4 h-4" /> : <Building2 className="w-4 h-4" />} Institutional Context
+                        Institutional Hub
                      </h4>
                      <div className="p-5 bg-paper rounded-2xl border-2 border-black">
                         <p className="font-black text-black">{isStudent ? profile.university : profile.companyName}</p>
                         <p className="text-[10px] font-bold text-gray-400 mt-1">
                           {isStudent ? (profile.major ? `${profile.major} | Year ${profile.gradYear || 'N/A'}` : 'Academic Node') : `Team Size: ${profile.teamSize || 'N/A'}`}
                         </p>
-                        {isStudent && (
-                            <div className="mt-3 inline-flex items-center gap-1.5 text-forest text-[8px] font-black uppercase tracking-widest bg-forest/5 px-2 py-0.5 rounded-md border border-forest/10">
-                                <ShieldCheck className="w-2.5 h-2.5" /> University Verified Node
-                            </div>
-                        )}
                      </div>
                   </div>
                   <div className="space-y-4">
                      <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-2">
-                        <Zap className="w-4 h-4" /> Grid Skillset
+                        Grid Skillset
                      </h4>
                      <div className="flex flex-wrap gap-2">
                         {profile.skills && profile.skills.length > 0 ? profile.skills.map(skill => (
@@ -190,7 +239,7 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
 
             <section>
                <h2 className="text-sm font-black uppercase tracking-widest text-black flex items-center gap-3 mb-6">
-                  <Briefcase className="w-5 h-5 text-forest" /> Grid History
+                  <Briefcase className="w-5 h-5 text-forest" /> Transmission History
                </h2>
                <div className="space-y-6">
                   {isStudent ? (
@@ -198,7 +247,7 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                       <div key={review.id} className="tactile-card p-8 bg-white rounded-[2rem] border-2 border-black flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                          <div>
                             <h4 className="text-lg font-black text-black mb-1">{review.problemTitle}</h4>
-                            <p className="text-[10px] font-black uppercase text-coral tracking-widest">Sync by {review.companyName}</p>
+                            <p className="text-[10px] font-black uppercase text-coral tracking-widest">Sync Source: {review.companyName}</p>
                             <p className="mt-3 text-sm text-gray-500 font-bold italic leading-relaxed">"{review.feedback}"</p>
                          </div>
                          <div className="shrink-0 flex items-center gap-4">
@@ -216,7 +265,7 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
                     )
                   ) : (
                     companyProblems.map(p => (
-                      <div key={p.id} className="tactile-card p-8 bg-white rounded-[2rem] border-2 border-black flex justify-between items-center group cursor-pointer hover:bg-paper">
+                      <div key={p.id} className="tactile-card p-8 bg-white rounded-[2rem] border-2 border-black flex justify-between items-center group">
                          <div>
                             <h4 className="text-lg font-black text-black mb-1 group-hover:text-coral transition-colors">{p.title}</h4>
                             <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-2">
@@ -237,6 +286,8 @@ const ProfileDossier: React.FC<ProfileDossierProps> = ({ userId, onBack }) => {
           </div>
         </div>
       </div>
+
+      <ProfileEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
     </div>
   );
 };

@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment } from '../types.ts';
+import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment, Badge, SkillLevel } from '../types.ts';
 import { auth, db } from '../services/firebase.ts';
 import { supabase } from '../services/supabase.ts';
+import { evaluateSolutionWithAI } from '../services/geminiService.ts';
 
 interface AppContextType {
   user: User | null;
@@ -19,15 +21,31 @@ interface AppContextType {
   manualCloseProblem: (problemId: string) => Promise<void>;
   addSolution: (problemId: string, content: string, file?: File) => Promise<void>;
   acceptSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, paymentMethod: string) => Promise<void>;
+  verifySimulationSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, status: 'VERIFIED' | 'REJECTED') => Promise<void>;
   updateUserProfile: (data: Partial<User>) => Promise<void>;
   adminBanUser: (userId: string, currentStatus: boolean) => Promise<void>;
   adminDeleteUser: (userId: string) => Promise<void>;
   adminDeleteProblem: (problemId: string) => Promise<void>;
   updateSiteConfig: (newConfig: Partial<SiteConfig>) => Promise<void>;
   fetchSingleUser: (userId: string) => Promise<User | null>;
+  fetchUserByUsername: (username: string) => Promise<User | null>;
+  clearAuditNotification: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const calculateSkillLevel = (avg: number): SkillLevel => {
+  if (avg >= 90) return 'Advanced';
+  if (avg >= 75) return 'Intermediate';
+  if (avg >= 60) return 'Junior';
+  return 'Beginner';
+};
+
+const BADGE_RULES: Badge[] = [
+    { id: 'first_fix', name: 'First Fix', threshold: 1, icon: '🎯', description: 'Solved your first practice simulation.', bonusPoints: 10, awardedAt: '' } as any,
+    { id: 'debugger', name: 'Debugger', threshold: 5, icon: '🐛', description: 'Crushed 5 technical simulations.', bonusPoints: 50, awardedAt: '' } as any,
+    { id: 'pro_solver', name: 'Pro Solver', threshold: 20, icon: '🔥', description: '20 simulations verified.', bonusPoints: 200, awardedAt: '' } as any
+];
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -39,131 +57,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const solutionUnsubscribes = useRef<Record<string, () => void>>({});
 
+  const detectPlagiarism = (content: string, problemId: string): { similarity: number, status: 'CLEAN' | 'FLAGGED' | 'PENALIZED' } => {
+    const currentProblem = problems.find(p => p.id === problemId);
+    if (!currentProblem || !currentProblem.solutions) return { similarity: 0, status: 'CLEAN' };
+
+    let maxSim = 0;
+    currentProblem.solutions.forEach(s => {
+      const common = s.content.split('').filter((c, i) => content[i] === c).length;
+      const sim = (common / Math.max(content.length, s.content.length)) * 100;
+      if (sim > maxSim) maxSim = sim;
+    });
+
+    if (maxSim > 90) return { similarity: maxSim, status: 'PENALIZED' };
+    if (maxSim > 80) return { similarity: maxSim, status: 'FLAGGED' };
+    return { similarity: maxSim, status: 'CLEAN' };
+  };
+
   useEffect(() => {
-    const docRef = db.collection("settings").doc("global");
-    const unsub = docRef.onSnapshot(
-      (docSnap) => {
-        if (docSnap.exists) setSiteConfig((docSnap as any).data() as SiteConfig);
-      },
-      (error) => {
+    const unsub = db.collection("settings").doc("global").onSnapshot((doc) => {
+        if (doc.exists) setSiteConfig(doc.data() as SiteConfig);
+    }, (error) => {
         console.warn("Global settings access restricted:", error.message);
-      }
-    );
+    });
     return () => unsub();
   }, []);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser && firebaseUser.emailVerified) {
-        try {
-          const docRef = db.collection("users").doc(firebaseUser.uid);
-          const docSnap = await docRef.get();
-          if (docSnap.exists) {
-            const userData = { id: firebaseUser.uid, ...(docSnap as any).data() } as User;
+        const unsub = db.collection("users").doc(firebaseUser.uid).onSnapshot((snap) => {
+          if (snap.exists) {
+            const userData = { id: firebaseUser.uid, ...snap.data() } as User;
             if (!userData.isBanned) setUser(userData);
-            else await auth.signOut();
+            else auth.signOut();
           }
-        } catch (error) { setUser(null); }
-      } else { setUser(null); }
+        }, (error) => {
+            console.error("User profile sync error:", error.message);
+        });
+        return () => unsub();
+      } else { 
+        setUser(null); 
+      }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Use scoped query for users to allow guests to see counts while maintaining security for detailed data
   useEffect(() => {
-    let query: any = db.collection("users");
-    
-    // For non-admin users (including guests), we restrict queries to prevent unauthorized access
-    // to sensitive data, but we allow basic fetching to support total account counters.
-    if (!user || user.role !== UserRole.ADMIN) {
-      // In a real production app, Firestore security rules would ensure only non-sensitive 
-      // fields (like role) are readable by guests.
-    }
-
-    const unsub = query.onSnapshot(
-      (snapshot: any) => {
-        const usersList = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as User));
-        // Ensure the current user is in the list if they aren't already fetched
-        if (user && !usersList.find(u => u.id === user.id)) {
-          usersList.push(user);
-        }
+    const unsub = db.collection("users").onSnapshot((snapshot) => {
+        const usersList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as User));
         setAllUsers(usersList);
-      },
-      (error: any) => {
-        console.warn("Community stats fetch restricted. Payout stats might be limited.", error.message);
-        if (user) setAllUsers([user]);
-        else setAllUsers([]);
-      }
-    );
+    }, (error) => {
+        console.warn("Users list restricted for guest/role:", error.message);
+        setAllUsers(user ? [user] : []);
+    });
     return () => unsub();
-  }, [user?.id, user?.role]);
+  }, [user?.id]);
 
   useEffect(() => {
-    const unsub = db.collection("problems").orderBy("createdAt", "desc").onSnapshot(
-      (snapshot) => {
-        const problemsData = snapshot.docs.map(doc => ({ id: doc.id, ...(doc as any).data(), solutions: [] })) as Problem[];
+    const unsub = db.collection("problems").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+        const problemsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), solutions: [] })) as Problem[];
         setProblems(problemsData);
         
-        problemsData.forEach(p => {
-          if (!solutionUnsubscribes.current[p.id]) {
-            solutionUnsubscribes.current[p.id] = db.collection("problems").doc(p.id).collection("solutions").onSnapshot(
-              (s) => {
-                setProblems(current => current.map(cp => cp.id === p.id ? { ...cp, solutions: s.docs.map(sd => ({ id: sd.id, ...(sd as any).data() } as Solution)) } : cp));
-              },
-              (error) => {
-                console.debug(`Solutions restricted for problem ${p.id}`);
-              }
-            );
-          }
-        });
-      },
-      (error) => {
-        console.warn("Problems collection access restricted:", error.message);
-      }
-    );
+        if (auth.currentUser) {
+          problemsData.forEach(p => {
+            if (!solutionUnsubscribes.current[p.id]) {
+              solutionUnsubscribes.current[p.id] = db.collection("problems").doc(p.id).collection("solutions").onSnapshot((s) => {
+                  setProblems(current => current.map(cp => cp.id === p.id ? { ...cp, solutions: s.docs.map(sd => ({ id: sd.id, ...sd.data() } as Solution)) } : cp));
+              }, (error) => {
+                  // Silently handle nested solutions permissions
+              });
+            }
+          });
+        }
+      }, (error) => {
+          console.warn("Problems feed restricted:", error.message);
+          setProblems([]);
+      });
+
     return () => {
       unsub();
-      Object.values(solutionUnsubscribes.current).forEach((un: any) => {
-        if (typeof un === 'function') un();
-      });
+      Object.values(solutionUnsubscribes.current).forEach((un: any) => un());
       solutionUnsubscribes.current = {};
     };
   }, [user?.id]);
 
-  useEffect(() => {
-    if (!user) { setPayments([]); return; }
-    
-    let q: any = db.collection("payments");
-    
-    if (user.role === UserRole.STUDENT) {
-      q = q.where("toId", "==", user.id).orderBy("timestamp", "desc");
-    } else if (user.role === UserRole.COMPANY) {
-      q = q.where("fromId", "==", user.id).orderBy("timestamp", "desc");
-    } else if (user.role === UserRole.ADMIN) {
-      q = q.orderBy("timestamp", "desc");
-    }
+  const clearAuditNotification = async () => {
+    if (!user) return;
+    await db.collection("users").doc(user.id).update({ auditNotification: null });
+  };
 
-    const unsub = q.onSnapshot(
-      (snap: any) => {
-        setPayments(snap.docs.map((d: any) => ({ id: d.id, ...(d as any).data() } as Payment)));
-      },
-      (error: any) => {
-        console.warn("Payments history access restricted:", error.message);
-      }
-    );
-    return () => unsub();
-  }, [user?.id, user?.role]);
-
-  const fetchSingleUser = async (userId: string): Promise<User | null> => {
+  const fetchSingleUser = async (userId: string) => {
     try {
-      const doc = await db.collection("users").doc(userId).get();
-      if (doc.exists) return { id: doc.id, ...doc.data() } as User;
-      return null;
-    } catch (e) {
-      console.error("Failed to fetch profile:", e);
-      return null;
-    }
+        const doc = await db.collection("users").doc(userId).get();
+        return doc.exists ? { id: doc.id, ...doc.data() } as User : null;
+    } catch { return null; }
+  };
+
+  const fetchUserByUsername = async (username: string) => {
+    try {
+        const snap = await db.collection("users").where("username", "==", username).limit(1).get();
+        return !snap.empty ? { id: snap.docs[0].id, ...snap.docs[0].data() } as User : null;
+    } catch { return null; }
   };
 
   const login = async (email: string, password: string) => {
@@ -173,133 +168,187 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const register = async (email: string, password: string, role: UserRole, name: string, extraInfo: string) => {
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user!.uid;
+    const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 1000);
     const newUser: Partial<User> = { 
-      id: uid, 
-      email, 
-      name, 
-      role, 
+      id: uid, username, email, name, role, 
       university: role === UserRole.STUDENT ? extraInfo : undefined, 
       companyName: role === UserRole.COMPANY ? extraInfo : undefined, 
-      rating: role === UserRole.STUDENT ? 0 : undefined, 
-      solvedCount: 0, 
-      reviews: [], 
-      lastSeen: new Date().toISOString(), 
-      joinedAt: new Date().toISOString(),
-      bio: '', 
-      profilePicUrl: '', 
-      skills: [] 
+      rating: 0, leaderboardScore: 0, penaltyPoints: 0, solvedCount: 0, simSolvedCount: 0, 
+      skillLevel: 'Beginner', badges: [], reviews: [], joinedAt: new Date().toISOString(),
+      bio: '', skills: [] 
     };
     await db.collection("users").doc(uid).set(newUser);
     await userCredential.user!.sendEmailVerification();
     await auth.signOut();
   };
 
-  const logout = () => auth.signOut();
+  const logout = async () => {
+    Object.values(solutionUnsubscribes.current).forEach((un: any) => un());
+    solutionUnsubscribes.current = {};
+    setUser(null);
+    await auth.signOut();
+  };
+
   const resetPassword = (email: string) => auth.sendPasswordResetEmail(email);
 
   const addProblem = async (data: Partial<Problem>) => {
-    if (!user || user.role !== UserRole.COMPANY) return;
-    await db.collection("problems").add({ ...data, companyId: user.id, companyName: user.companyName, status: 'OPEN', createdAt: new Date().toISOString() });
-  };
-
-  const editProblem = async (id: string, data: Partial<Problem>) => {
-    await db.collection("problems").doc(id).update(data);
-  };
-
-  const manualCloseProblem = async (id: string) => {
-    await db.collection("problems").doc(id).update({ status: 'CLOSED' });
+    if (!user) return;
+    await db.collection("problems").add({ 
+        ...data, companyId: user.id, companyName: user.companyName || user.name, 
+        status: 'OPEN', createdAt: new Date().toISOString() 
+    });
   };
 
   const addSolution = async (problemId: string, content: string, file?: File) => {
     if (!user) return;
-    let attachmentUrl = null, attachmentName = null;
+    const plag = detectPlagiarism(content, problemId);
+    const prob = problems.find(p => p.id === problemId);
+    const aiEval = await evaluateSolutionWithAI(prob?.description || "", content);
+
+    let attachmentUrl = null;
     if (file) {
-      const path = `${problemId}/${user.id}/${Date.now()}_${file.name}`;
-      await supabase.storage.from('solutions').upload(path, file);
+      const path = `solutions/${problemId}/${user.id}/${Date.now()}_${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage.from('solutions').upload(path, file);
+      
+      if (uploadError) {
+          console.error("Supabase Storage Error:", uploadError);
+          if (uploadError.message.includes("Bucket not found")) {
+              throw new Error("Critical: 'solutions' bucket missing in Supabase. Check dashboard.");
+          }
+          throw uploadError;
+      }
+      
       attachmentUrl = supabase.storage.from('solutions').getPublicUrl(path).data.publicUrl;
-      attachmentName = file.name;
     }
-    await db.collection("problems").doc(problemId).collection("solutions").add({ problemId, studentId: user.id, studentName: user.name, content, submittedAt: new Date().toISOString(), isAccepted: false, attachmentUrl, attachmentName });
+
+    await db.collection("problems").doc(problemId).collection("solutions").add({ 
+        problemId, studentId: user.id, studentName: user.name, 
+        content, submittedAt: new Date().toISOString(), 
+        isAccepted: false, isVerified: false, isRejected: false,
+        reviewStatus: 'PENDING',
+        aiEvaluation: aiEval,
+        plagiarismMetadata: plag,
+        attachmentUrl 
+    });
   };
 
-  const acceptSolution = async (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, paymentMethod: string) => {
-    if (!user) return;
-    const prob = problems.find(p => p.id === problemId);
-    if (!prob) return;
-
-    let student = allUsers.find(u => u.id === studentId);
-    if (!student) {
-        student = await fetchSingleUser(studentId);
-    }
-
-    if (!student) {
-        console.error("Student profile not found. Cannot finalize transaction.");
-        return;
-    }
-
-    const grossAmount = parseFloat(prob.bounty.replace(/[^0-9.]/g, '')) || 0;
-    const commission = grossAmount * 0.1;
-    const netPayout = grossAmount - commission;
-
+  const verifySimulationSolution = async (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, status: 'VERIFIED' | 'REJECTED') => {
+    if (!user || (user.role !== UserRole.MENTOR && user.role !== UserRole.ADMIN)) return;
+    
     await db.runTransaction(async (transaction) => {
-      const probRef = db.collection("problems").doc(problemId);
-      const solRef = probRef.collection("solutions").doc(solutionId);
       const studentRef = db.collection("users").doc(studentId);
-      const payRef = db.collection("payments").doc();
+      const solRef = db.collection("problems").doc(problemId).collection("solutions").doc(solutionId);
+      
+      const studentSnap = await transaction.get(studentRef);
+      const solSnap = await transaction.get(solRef);
+      
+      if (!studentSnap.exists || !solSnap.exists) {
+          throw new Error("Target node or submission detached.");
+      }
 
-      transaction.update(solRef, { isAccepted: true, rating, feedback });
-      transaction.update(probRef, { status: 'CLOSED' });
-
-      const newReview = { 
-        id: solutionId, 
-        problemTitle: prob.title, 
+      const studentData = studentSnap.data() as User;
+      const solData = solSnap.data() as Solution;
+      const isVerified = status === 'VERIFIED';
+      
+      transaction.update(solRef, { 
+        isVerified, 
+        isRejected: !isVerified, 
+        reviewStatus: status,
         rating, 
         feedback, 
-        createdAt: new Date().toISOString(), 
-        companyName: user.companyName || user.name 
-      };
-
-      const currentRating = student!.rating || 0;
-      const currentReviews = student!.reviews?.length || 0;
-      const totalScore = (currentRating * currentReviews) + rating;
-      const newRating = Number((totalScore / (currentReviews + 1)).toFixed(1));
-
-      transaction.update(studentRef, { 
-        solvedCount: (student!.solvedCount || 0) + 1, 
-        rating: newRating, 
-        reviews: [...(student!.reviews || []), newReview] 
+        mentorId: user.id, 
+        mentorName: user.name 
       });
 
-      transaction.set(payRef, { 
-        problemId, 
-        problemTitle: prob.title, 
-        amount: prob.bounty, 
-        commissionAmount: `₹${commission.toFixed(0)}`, 
-        netAmount: `₹${netPayout.toFixed(0)}`, 
-        status: 'COMPLETED', 
-        fromId: user.id, 
-        fromName: user.companyName || user.name, 
-        toId: studentId, 
-        toName: student!.name, 
-        timestamp: new Date().toISOString(), 
-        method: paymentMethod 
-      });
+      if (isVerified) {
+        const verifiedSims = (studentData.simSolvedCount || 0) + 1;
+        const pastScores = (studentData.reviews || []).map(r => r.rating).slice(-4);
+        const allScores = [...pastScores, rating];
+        const rollingAvg = Math.round(allScores.reduce((a,b) => a + b, 0) / allScores.length);
+        
+        let bonusPoints = 0;
+        const earnedBadges = studentData.badges || [];
+        const newBadges: Badge[] = [];
+        BADGE_RULES.forEach(rule => {
+            if (verifiedSims >= (rule as any).threshold && !earnedBadges.find(b => b.id === rule.id)) {
+                const b = { ...rule, awardedAt: new Date().toISOString() };
+                newBadges.push(b);
+                bonusPoints += b.bonusPoints;
+            }
+        });
+
+        const plag = solData.plagiarismMetadata;
+        let penaltyInc = 0;
+        if (plag?.status === 'PENALIZED') penaltyInc = 100;
+        else if (plag?.status === 'FLAGGED') penaltyInc = 25;
+
+        const finalScore = (verifiedSims * 10) + (rollingAvg * 2) + bonusPoints - ((studentData.penaltyPoints || 0) + penaltyInc);
+
+        transaction.update(studentRef, {
+            simSolvedCount: verifiedSims,
+            rollingAverage: rollingAvg,
+            skillLevel: calculateSkillLevel(rollingAvg),
+            penaltyPoints: (studentData.penaltyPoints || 0) + penaltyInc,
+            leaderboardScore: finalScore,
+            badges: [...earnedBadges, ...newBadges],
+            reviews: [...(studentData.reviews || []), {
+                id: solutionId, problemTitle: 'Simulation Exercise',
+                rating, feedback, createdAt: new Date().toISOString(),
+                companyName: `Mentor: ${user.name}`
+            }],
+            auditNotification: { 
+                problemId, 
+                problemTitle: 'Simulation Verified', 
+                status: 'VERIFIED', 
+                feedback, 
+                read: false 
+            }
+        });
+      } else {
+        transaction.update(studentRef, {
+            auditNotification: { 
+                problemId, 
+                problemTitle: 'Simulation Review', 
+                status: 'REJECTED', 
+                feedback, 
+                read: false 
+            }
+        });
+      }
     });
+  };
+
+  const acceptSolution = async (pId: string, sId: string, stId: string, r: number, f: string) => {
+      if (!user) return;
+      await db.runTransaction(async (transaction) => {
+          const studentRef = db.collection("users").doc(stId);
+          const solRef = db.collection("problems").doc(pId).collection("solutions").doc(sId);
+          const studentSnap = await transaction.get(studentRef);
+          
+          transaction.update(solRef, { isAccepted: true, rating: r, feedback: f });
+          transaction.update(db.collection("problems").doc(pId), { status: 'CLOSED' });
+          
+          if (studentSnap.exists) {
+            const data = studentSnap.data() as User;
+            transaction.update(studentRef, { solvedCount: (data.solvedCount || 0) + 1 });
+          }
+      });
   };
 
   const updateUserProfile = async (data: Partial<User>) => {
     if (!user) return;
     await db.collection("users").doc(user.id).update(data);
-    setUser(prev => prev ? { ...prev, ...data } : null);
   };
 
-  const adminBanUser = async (id: string, status: boolean) => { await db.collection("users").doc(id).update({ isBanned: !status }); };
+  const adminBanUser = async (id: string, s: boolean) => { await db.collection("users").doc(id).update({ isBanned: !s }); };
   const adminDeleteUser = async (id: string) => { await db.collection("users").doc(id).delete(); };
   const adminDeleteProblem = async (id: string) => { await db.collection("problems").doc(id).delete(); };
   const updateSiteConfig = async (c: Partial<SiteConfig>) => { await db.collection("settings").doc("global").set(c, { merge: true }); };
+  const editProblem = async (id: string, d: any) => { await db.collection("problems").doc(id).update(d); };
+  const manualCloseProblem = async (id: string) => { await db.collection("problems").doc(id).update({ status: 'CLOSED' }); };
 
   return (
-    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, addSolution, acceptSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminDeleteUser, adminDeleteProblem, updateSiteConfig, fetchSingleUser }}>
+    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, addSolution, acceptSolution, verifySimulationSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminDeleteUser, adminDeleteProblem, updateSiteConfig, fetchSingleUser, fetchUserByUsername, clearAuditNotification }}>
       {children}
     </AppContext.Provider>
   );

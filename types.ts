@@ -3,26 +3,25 @@ export enum UserRole {
   GUEST = 'GUEST',
   STUDENT = 'STUDENT',
   COMPANY = 'COMPANY',
+  MENTOR = 'MENTOR',
   ADMIN = 'ADMIN'
 }
 
-export interface SiteConfig {
-  baseFontSize: number;
-  enableDarkMode: boolean;
-}
+export type SkillLevel = 'Beginner' | 'Junior' | 'Intermediate' | 'Advanced';
 
-export interface Review {
+export interface Badge {
   id: string;
-  problemTitle: string;
-  rating: number;
-  feedback: string;
-  createdAt: string;
-  companyName: string;
+  name: string;
+  description: string;
+  icon: string;
+  awardedAt: string;
+  bonusPoints: number;
 }
 
 export interface User {
   id: string;
   name: string;
+  username?: string;
   email: string;
   role: UserRole;
   university?: string;
@@ -34,8 +33,14 @@ export interface User {
   linkedin?: string;
   github?: string;
   websiteUrl?: string;
-  rating?: number;
+  rating?: number; // Mentor rating
+  leaderboardScore?: number; // Calculated platform score
+  skillLevel?: SkillLevel;
+  rollingAverage?: number; // Last 5 scores
+  penaltyPoints?: number;
   solvedCount?: number;
+  simSolvedCount?: number;
+  badges?: Badge[];
   reviews?: Review[];
   lastSeen?: string;
   bio?: string;
@@ -43,6 +48,75 @@ export interface User {
   skills?: string[];
   isBanned?: boolean;
   joinedAt?: string;
+  auditNotification?: {
+    problemId: string;
+    problemTitle: string;
+    status: 'VERIFIED' | 'REJECTED';
+    feedback: string;
+    read: boolean;
+  };
+}
+
+export interface Review {
+  id: string;
+  problemTitle: string;
+  rating: number;
+  feedback: string;
+  createdAt: string;
+  companyName: string;
+}
+
+export interface AiEvaluation {
+  suggestedScore: number;
+  reasoning: string;
+  flags: string[]; // ['Logic Error', 'Over-engineered', 'Excellent Docs']
+}
+
+export interface PlagiarismMetadata {
+  similarityPercentage: number;
+  targetSolutionId?: string;
+  status: 'CLEAN' | 'FLAGGED' | 'PENALIZED';
+}
+
+export interface Solution {
+  id: string;
+  problemId: string;
+  studentId: string;
+  studentName: string;
+  content: string;
+  submittedAt: string;
+  isAccepted: boolean;
+  isVerified?: boolean;
+  isRejected?: boolean;
+  reviewStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  rating?: number; // The score (0-100)
+  feedback?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  mentorId?: string;
+  mentorName?: string;
+  aiEvaluation?: AiEvaluation;
+  plagiarismMetadata?: PlagiarismMetadata;
+}
+
+export interface Problem {
+  id: string;
+  companyId: string;
+  companyName: string;
+  title: string;
+  description: string;
+  expectedBehavior?: string;
+  currentBehavior?: string;
+  techStack?: string;
+  stepsToReproduce?: string;
+  impact?: string;
+  bounty: string;
+  status: 'OPEN' | 'CLOSED';
+  isSimulation?: boolean;
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+  createdAt: string;
+  tags: string[];
+  solutions: Solution[];
 }
 
 export interface Payment {
@@ -61,39 +135,7 @@ export interface Payment {
   method: string;
 }
 
-export interface Solution {
-  id: string;
-  problemId: string;
-  studentId: string;
-  studentName: string;
-  content: string;
-  submittedAt: string;
-  isAccepted: boolean;
-  rating?: number;
-  feedback?: string;
-  attachmentUrl?: string;
-  attachmentName?: string;
-}
-
-export interface Problem {
-  id: string;
-  companyId: string;
-  companyName: string;
-  title: string;
-  description: string;
-  expectedBehavior?: string;
-  currentBehavior?: string;
-  techStack?: string;
-  stepsToReproduce?: string;
-  impact?: string;
-  bounty: string;
-  status: 'OPEN' | 'CLOSED';
-  createdAt: string;
-  tags: string[];
-  solutions: Solution[];
-}
-
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
+export interface SiteConfig {
+  baseFontSize: number;
+  enableDarkMode: boolean;
 }

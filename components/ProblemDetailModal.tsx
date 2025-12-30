@@ -1,7 +1,12 @@
 
 import React, { useState } from 'react';
 import { Problem, Solution, User } from '../types.ts';
-import { X, Briefcase, IndianRupee, Tag, Clock, Users, CheckCircle2, Download, Terminal, CalendarDays, BookOpenText, Info, AlertTriangle, Cpu, Layers, Activity } from 'lucide-react';
+import { 
+  X, Briefcase, IndianRupee, Tag, Clock, Users, CheckCircle2, 
+  Download, Terminal, CalendarDays, BookOpenText, Info, 
+  AlertTriangle, Cpu, Layers, Activity, ShieldCheck, Lock, 
+  Sparkles, KeyRound, Ghost
+} from 'lucide-react';
 import ProfileCard from './ProfileCard.tsx';
 import { useStore } from '../context/Store.tsx';
 
@@ -14,17 +19,28 @@ interface ProblemDetailModalProps {
 }
 
 const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose, problem, onSolveClick, onProfileClick }) => {
-  const { allUsers } = useStore();
+  const { allUsers, user } = useStore();
   const [showCompanyProfileCard, setShowCompanyProfileCard] = useState(false);
 
   if (!isOpen || !problem) return null;
 
   const companyUser = allUsers.find(u => u.id === problem.companyId);
+  const isSimulation = problem.isSimulation || problem.companyName.toLowerCase().includes('practice');
+  const isAuthenticated = !!user;
+
+  const funnyAlerts = [
+    "Hold up, rogue node! You're trying to access high-stakes intel without an active protocol? Authenticate before the system thinks you're a glitch. 👀🪄",
+    "Access Denied! Your current identity is 'Ghost'. We don't hire ghosts, they're terrible at debugging. Log in to reveal the grid. 👻💻",
+    "Whoa there, entity! That data is restricted to verified solvers only. Don't be a lurker, be a legend. Authenticate! 🚀✨",
+    "The firewall is judging you. Synchronize your node to bypass this blur. It's for your own protection... and mine. 😁🛡️"
+  ];
+
+  const randomAlert = funnyAlerts[Math.floor(Math.random() * funnyAlerts.length)];
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className="tactile-card bg-white rounded-[2.5rem] w-full max-w-5xl relative animate-pop-in flex flex-col max-h-[90vh] overflow-hidden"
+        className="tactile-card bg-white rounded-[2.5rem] w-full max-w-5xl relative animate-pop-in flex flex-col max-h-[90vh] overflow-hidden border-4 border-black"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Header */}
@@ -51,7 +67,29 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
         </div>
 
         {/* Content Area */}
-        <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-6 md:p-10 overflow-y-auto custom-scrollbar flex-1 relative">
+          
+          {/* Locked Overlay for Guest Users */}
+          {!isAuthenticated && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center p-6 bg-white/10 backdrop-blur-md pointer-events-none select-none">
+                <div className="tactile-card bg-black text-white p-10 rounded-[3rem] max-w-lg text-center shadow-2xl pointer-events-auto border-4 border-citrus">
+                   <div className="w-20 h-20 bg-citrus text-black rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce shadow-[6px_6px_0px_0px_rgba(255,255,255,1)]">
+                      <Lock className="w-10 h-10" />
+                   </div>
+                   <h3 className="text-2xl font-black tracking-tighter mb-4 italic text-citrus">Identity Verification Required</h3>
+                   <p className="text-base font-bold text-gray-300 leading-relaxed mb-8">
+                     {randomAlert}
+                   </p>
+                   <button 
+                     onClick={() => window.location.href = '/'} // Or trigger auth view logic
+                     className="tactile-btn w-full bg-white text-black py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-citrus transition-all"
+                   >
+                     Authenticate My Node 🪄
+                   </button>
+                </div>
+            </div>
+          )}
+
           <div className="grid lg:grid-cols-3 gap-10">
             {/* Mission Briefing Details */}
             <div className="lg:col-span-2 space-y-10">
@@ -59,13 +97,13 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="p-4 bg-paper border-2 border-black rounded-2xl text-center">
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Bounty</p>
-                  <div className="font-black text-lg flex items-center justify-center text-forest">
+                  <div className={`font-black text-lg flex items-center justify-center text-forest ${!isAuthenticated ? 'blur-sm' : ''}`}>
                     <IndianRupee className="w-4 h-4 mr-0.5" /> {problem.bounty.replace(/[^\d]/g, '')}
                   </div>
                 </div>
                 <div className="p-4 bg-paper border-2 border-black rounded-2xl text-center">
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Impact</p>
-                  <div className="font-black text-lg flex items-center justify-center text-coral uppercase tracking-tighter">
+                  <div className={`font-black text-lg flex items-center justify-center text-coral uppercase tracking-tighter ${!isAuthenticated ? 'blur-sm' : ''}`}>
                     <Activity className="w-4 h-4 mr-2" /> {problem.impact || 'Normal'}
                   </div>
                 </div>
@@ -94,7 +132,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                   </div>
                 </section>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className={`grid md:grid-cols-2 gap-8 ${!isAuthenticated ? 'blur-md opacity-40 select-none' : ''}`}>
                   <section>
                     <h3 className="text-sm font-black uppercase tracking-widest text-black flex items-center gap-2 mb-4">
                       <CheckCircle2 className="w-5 h-5 text-forest" /> Expected Behavior
@@ -113,7 +151,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                   </section>
                 </div>
 
-                <section>
+                <section className={!isAuthenticated ? 'blur-md opacity-40 select-none' : ''}>
                   <h3 className="text-sm font-black uppercase tracking-widest text-black flex items-center gap-2 mb-4">
                     <Layers className="w-5 h-5 text-black" /> Steps to Reproduce
                   </h3>
@@ -123,7 +161,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                 </section>
               </div>
 
-              <section className="pt-8 border-t-2 border-black/5">
+              <section className={`pt-8 border-t-2 border-black/5 ${!isAuthenticated ? 'blur-md opacity-20 select-none' : ''}`}>
                 <h3 className="text-sm font-black uppercase tracking-widest text-black flex items-center gap-2 mb-6">
                   <Users className="w-5 h-5 text-forest" /> Solver Submissions ({problem.solutions?.length || 0})
                 </h3>
@@ -132,27 +170,11 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                     {problem.solutions.sort((a,b) => (a.isAccepted === b.isAccepted) ? 0 : a.isAccepted ? -1 : 1).map((s) => (
                       <div key={s.id} className={`p-6 rounded-2xl border-2 border-black transition-all ${s.isAccepted ? 'bg-citrus/5 border-forest' : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}>
                         <div className="flex justify-between items-center mb-3">
-                          <span 
-                            onClick={() => onProfileClick?.(s.studentId)}
-                            className="font-black text-black cursor-pointer hover:text-coral transition-colors"
-                          >
+                          <span className="font-black text-black">
                             {s.studentName}
                           </span>
-                          {s.isAccepted && (
-                            <span className="px-3 py-1 bg-forest text-citrus rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3" /> Accepted
-                            </span>
-                          )}
                         </div>
-                        <p className="text-gray-500 font-bold text-sm mb-4 line-clamp-3 italic opacity-80">"{s.content}"</p>
-                        <div className="flex justify-between items-center pt-3 border-t border-black/5 text-[10px] font-black text-gray-400 uppercase">
-                          <span>{new Date(s.submittedAt).toLocaleDateString()}</span>
-                          {s.attachmentUrl && (
-                            <a href={s.attachmentUrl} target="_blank" className="flex items-center text-coral hover:underline">
-                              <Download className="w-4 h-4 mr-1.5" /> Payload
-                            </a>
-                          )}
-                        </div>
+                        <p className="text-gray-500 font-bold text-sm mb-4 italic opacity-80 line-clamp-1">Solution data encrypted.</p>
                       </div>
                     ))}
                   </div>
@@ -166,7 +188,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
 
             {/* Side Info Panel */}
             <div className="space-y-8">
-               <div className="tactile-card p-6 bg-white rounded-3xl">
+               <div className={`tactile-card p-6 bg-white rounded-3xl ${!isAuthenticated ? 'blur-sm' : ''}`}>
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Cpu className="w-3 h-3"/> System Stack</h4>
                   <div className="flex flex-wrap gap-2">
                     {problem.techStack ? problem.techStack.split(',').map(tech => (
@@ -177,7 +199,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                   </div>
                </div>
 
-               <div className="tactile-card p-6 bg-white rounded-3xl">
+               <div className={`tactile-card p-6 bg-white rounded-3xl ${!isAuthenticated ? 'blur-sm' : ''}`}>
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Tag className="w-3 h-3"/> Grid Tags</h4>
                   <div className="flex flex-wrap gap-2">
                     {problem.tags.map(tag => (
@@ -192,7 +214,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Briefcase className="w-3 h-3"/> Entity Details</h4>
                   <div 
                     onClick={() => onProfileClick?.(problem.companyId)}
-                    className="flex items-center gap-3 p-3 bg-white border-2 border-black rounded-2xl cursor-pointer hover:bg-citrus/10 relative transition-all"
+                    className={`flex items-center gap-3 p-3 bg-white border-2 border-black rounded-2xl cursor-pointer hover:bg-citrus/10 relative transition-all ${!isAuthenticated ? 'opacity-50 grayscale' : ''}`}
                   >
                     <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center font-black">
                       {problem.companyName.charAt(0)}
@@ -204,18 +226,28 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                   </div>
                </div>
                
-               {onSolveClick && problem.status === 'OPEN' && (
-                 <div className="p-8 bg-citrus rounded-[2.5rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                    <h4 className="font-black text-xl mb-3 tracking-tighter">Initialize Execution?</h4>
-                    <p className="text-xs font-bold mb-8 opacity-70 leading-relaxed">Review the mission brief carefully. Deploy your code payload to the company grid for bounty extraction. 😁</p>
-                    <button 
-                      onClick={() => onSolveClick(problem.id)}
-                      className="tactile-btn w-full bg-black text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3"
-                    >
-                      <Terminal className="w-5 h-5" /> Commit Solution
-                    </button>
-                 </div>
-               )}
+               <div className="p-8 bg-citrus rounded-[2.5rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
+                  {!isAuthenticated && <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px] z-10"></div>}
+                  <h4 className="font-black text-xl mb-3 tracking-tighter relative z-20">
+                    {isAuthenticated ? (isSimulation ? 'Start Practice?' : 'Initialize Execution?') : 'Identity Locked'}
+                  </h4>
+                  <p className="text-xs font-bold mb-8 opacity-70 leading-relaxed relative z-20">
+                    {isAuthenticated 
+                      ? (isSimulation ? "Enter the sandbox environment to test your skills." : "Review the mission brief carefully. Deploy your code payload to the company grid for bounty extraction.") 
+                      : "Unauthorized access detected. Please authenticate your node to view the full briefing and commit solutions."
+                    } 😁
+                  </p>
+                  <button 
+                    onClick={() => onSolveClick?.(problem.id)}
+                    className={`tactile-btn w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 relative z-20 transition-all ${isAuthenticated ? 'bg-black text-white hover:bg-forest' : 'bg-gray-100 text-gray-400 border-2 border-black/10 shadow-none'}`}
+                  >
+                    {isAuthenticated ? (
+                      <><Terminal className="w-5 h-5" /> {isSimulation ? 'Commit Practice Solution' : 'Commit Solution'}</>
+                    ) : (
+                      <><KeyRound className="w-5 h-5" /> Authentication Required</>
+                    )}
+                  </button>
+               </div>
             </div>
           </div>
         </div>
