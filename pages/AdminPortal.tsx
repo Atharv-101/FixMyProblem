@@ -6,7 +6,7 @@ import {
   Users, CheckCircle2, Star, Trophy, Loader2, Shield, Activity, 
   Terminal, Cpu, IndianRupee, Settings, Trash2, Ban, Plus, 
   Briefcase, Layers, Info, Tag, Wand2, AlertTriangle, BarChart3, 
-  BrainCircuit, Layout, Zap, Edit2, Eye, XCircle, Download, FileArchive, ArrowUpRight
+  BrainCircuit, Layout, Zap, Edit2, Eye, XCircle, Download, FileArchive, ArrowUpRight, ShieldCheck, UserCheck
 } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
@@ -18,7 +18,7 @@ interface AdminPortalProps {
 }
 
 const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
-  const { allUsers, problems, siteConfig, updateSiteConfig, adminDeleteUser, adminDeleteProblem, adminBanUser, addProblem, editProblem, verifySimulationSolution } = useStore();
+  const { allUsers, problems, siteConfig, updateSiteConfig, adminDeleteUser, adminDeleteProblem, adminBanUser, adminVerifyUser, addProblem, editProblem, verifySimulationSolution } = useStore();
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'USERS' | 'CONTENT' | 'SIMULATION_AUDITS' | 'SETTINGS'>('OVERVIEW');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
@@ -47,6 +47,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
     const totalUsers = allUsers.length;
     const totalCompanies = allUsers.filter(u => u.role === UserRole.COMPANY).length;
     const totalStudents = allUsers.filter(u => u.role === UserRole.STUDENT).length;
+    const pendingCompanies = allUsers.filter(u => u.role === UserRole.COMPANY && !u.isVerified).length;
     const onlineUsers = allUsers.filter(u => {
       if (!u.lastSeen) return false;
       const lastSeenTime = new Date(u.lastSeen).getTime();
@@ -60,7 +61,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
       return acc + val;
     }, 0);
 
-    return { totalUsers, totalCompanies, totalStudents, onlineUsers, totalProblems, totalSimulations, totalBountyValue };
+    return { totalUsers, totalCompanies, totalStudents, onlineUsers, totalProblems, totalSimulations, totalBountyValue, pendingCompanies };
   }, [allUsers, problems]);
 
   const pendingSimulationAudits = useMemo(() => {
@@ -159,6 +160,14 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
       }
   };
 
+  const handleVerifyIdentity = async (id: string) => {
+      if(confirm("Verify this entity and grant full grid access?")) {
+          setProcessingId(id);
+          try { await adminVerifyUser(id); } catch(e) { alert("Verification protocol failure"); }
+          setProcessingId(null);
+      }
+  };
+
   const handleDeleteUser = async (id: string) => {
       if(confirm("Permanently wipe user identity from grid?")) {
           setProcessingId(id);
@@ -217,6 +226,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                 className={`tactile-btn px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-black text-white' : 'bg-white text-black hover:bg-citrus'}`}
              >
                 {tab.replace('_', ' ')} {tab === 'SIMULATION_AUDITS' && pendingSimulationAudits.length > 0 && <span className="ml-2 bg-coral text-white px-2 py-0.5 rounded-full text-[8px]">{pendingSimulationAudits.length}</span>}
+                {tab === 'USERS' && stats.pendingCompanies > 0 && <span className="ml-2 bg-citrus text-black px-2 py-0.5 rounded-full text-[8px]">{stats.pendingCompanies} Pending</span>}
              </button>
            ))}
         </div>
@@ -277,12 +287,15 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                      <th className="p-6 min-w-[200px]">Identity</th>
                      <th className="p-6 min-w-[120px]">Role</th>
                      <th className="p-6 min-w-[120px]">Grid Status</th>
+                     <th className="p-6 min-w-[120px]">Verification</th>
                      <th className="p-6 min-w-[120px]">Actions</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y-2 divide-gray-50">
                    {allUsers.map(u => {
                       const isOnline = u.lastSeen && (Date.now() - new Date(u.lastSeen).getTime() < 5 * 60 * 1000);
+                      const needsVerification = u.role === UserRole.COMPANY && !u.isVerified;
+
                       return (
                      <tr key={u.id} className="hover:bg-gray-50 group">
                        <td className="p-6 font-bold text-black">
@@ -313,9 +326,30 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                               {u.isBanned && <span className="text-[9px] font-black bg-coral text-white px-3 py-1 rounded-lg border-2 border-black uppercase tracking-widest w-fit">DETACHED</span>}
                           </div>
                        </td>
+                       <td className="p-6">
+                          {u.role === UserRole.COMPANY && (
+                              <span className={`text-[9px] font-black px-3 py-1 rounded-lg border-2 uppercase tracking-widest flex items-center gap-2 w-fit ${u.isVerified ? 'bg-forest/10 text-forest border-forest/20' : 'bg-citrus/20 text-black border-black'}`}>
+                                {u.isVerified ? <ShieldCheck className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3 animate-pulse" />}
+                                {u.isVerified ? 'VERIFIED' : 'PENDING'}
+                              </span>
+                          )}
+                          {u.role === UserRole.STUDENT && (
+                              <span className="text-[9px] font-black px-3 py-1 rounded-lg bg-gray-50 border-2 border-black/5 text-gray-400 uppercase tracking-widest">AUTO_PASS</span>
+                          )}
+                       </td>
                        <td className="p-6 flex gap-3">
                           {u.role !== UserRole.ADMIN && (
                               <>
+                                  {needsVerification && (
+                                      <button 
+                                          onClick={() => handleVerifyIdentity(u.id)}
+                                          disabled={processingId === u.id}
+                                          className="p-3 bg-citrus border-2 border-black rounded-xl text-black hover:bg-forest hover:text-white transition-all hover:scale-110"
+                                          title="Verify Entity"
+                                      >
+                                          {processingId === u.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserCheck className="w-5 h-5" />}
+                                      </button>
+                                  )}
                                   <button 
                                       onClick={() => handleBanToggle(u.id, !!u.isBanned)}
                                       disabled={processingId === u.id}

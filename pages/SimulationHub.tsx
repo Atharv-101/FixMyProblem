@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem } from '../types.ts';
-import { Code2, ArrowLeft, Zap, Terminal, Search, Award, Info, Lock, ArrowRight, BrainCircuit, ShieldCheck, Upload, FileArchive, X, Loader2, ArrowUpRight } from 'lucide-react';
+import { Code2, ArrowLeft, Zap, Terminal, Search, Award, Info, Lock, ArrowRight, BrainCircuit, ShieldCheck, Upload, FileArchive, X, Loader2, ArrowUpRight, Github, Cpu, AlertCircle } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
@@ -19,6 +19,9 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
   // Submission State
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [solutionText, setSolutionText] = useState('');
+  const [githubLink, setGithubLink] = useState('');
+  const [techStack, setTechStack] = useState('');
+  const [limitations, setLimitations] = useState('');
   const [solutionFile, setSolutionFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -43,6 +46,15 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
     setSelectedProblem(null);
   };
 
+  const resetForm = () => {
+    setSubmittingId(null);
+    setSolutionText('');
+    setGithubLink('');
+    setTechStack('');
+    setLimitations('');
+    setSolutionFile(null);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -60,10 +72,12 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
     
     setIsSubmitting(true);
     try {
-        await addSolution(submittingId, solutionText, solutionFile || undefined);
-        setSubmittingId(null);
-        setSolutionText('');
-        setSolutionFile(null);
+        await addSolution(submittingId, solutionText, solutionFile || undefined, {
+          githubLink,
+          techStack,
+          limitations
+        });
+        resetForm();
         setShowSuccess(true);
     } catch (error) {
         alert("Transmission failed.");
@@ -189,8 +203,8 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
         onSolveClick={handleStartSolve}
       />
 
-      <Modal isOpen={!!submittingId} onClose={() => setSubmittingId(null)} title="Sandbox Commit">
-        <form onSubmit={handleSubmitSolution} className="space-y-6">
+      <Modal isOpen={!!submittingId} onClose={resetForm} title="Sandbox Commit">
+        <form onSubmit={handleSubmitSolution} className="space-y-6 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-forest/10 text-forest rounded-xl text-[10px] font-black uppercase tracking-widest border border-forest/20">
                 <ShieldCheck className="w-3.5 h-3.5" /> Practice Environment: Verified
             </div>
@@ -202,11 +216,34 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
                 </div>
             </div>
 
+            <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2 flex items-center gap-1.5"><Github className="w-3 h-3"/> GitHub Link</label>
+                    <input 
+                      type="url"
+                      className="w-full border-2 border-black rounded-xl p-4 font-bold bg-paper outline-none text-xs md:text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all"
+                      placeholder="https://github.com/..."
+                      value={githubLink}
+                      onChange={e => setGithubLink(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2 flex items-center gap-1.5"><Cpu className="w-3 h-3"/> System Stack</label>
+                    <input 
+                      type="text"
+                      className="w-full border-2 border-black rounded-xl p-4 font-bold bg-paper outline-none text-xs md:text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none transition-all"
+                      placeholder="React, TypeScript..."
+                      value={techStack}
+                      onChange={e => setTechStack(e.target.value)}
+                    />
+                </div>
+            </div>
+
             <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Technical Summary</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Technical Report</label>
                 <textarea 
                     required 
-                    className="w-full border-2 border-black rounded-2xl p-5 h-48 font-mono text-sm focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
+                    className="w-full border-2 border-black rounded-2xl p-5 h-32 font-mono text-xs md:text-sm focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
                     placeholder="// Explain your logic and steps taken to fix the simulation..." 
                     value={solutionText} 
                     onChange={e => setSolutionText(e.target.value)} 
@@ -214,17 +251,27 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
             </div>
 
             <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Source Payload (ZIP)</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2 flex items-center gap-1.5"><AlertCircle className="w-3 h-3"/> Known Limitations</label>
+                <textarea 
+                    className="w-full border-2 border-black rounded-xl p-4 font-mono text-xs focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
+                    placeholder="// Edge cases or unfinished items..." 
+                    value={limitations} 
+                    onChange={e => setLimitations(e.target.value)} 
+                />
+            </div>
+
+            <div>
+                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Source Archive (ZIP)</label>
                 <div 
                     onClick={() => fileInputRef.current?.click()}
-                    className={`w-full border-2 border-black border-dashed rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-citrus/5 ${solutionFile ? 'bg-forest/5' : 'bg-paper'}`}
+                    className={`w-full border-2 border-black border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-citrus/5 ${solutionFile ? 'bg-forest/5' : 'bg-paper'}`}
                 >
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".zip,.rar,.7z" />
                     {solutionFile ? (
                         <div className="flex items-center gap-4 animate-pop">
                             <FileArchive className="w-10 h-10 text-forest" />
                             <div className="text-left">
-                                <p className="text-sm font-black text-black truncate max-w-[200px]">{solutionFile.name}</p>
+                                <p className="text-sm font-black text-black truncate max-w-[150px]">{solutionFile.name}</p>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase">READY FOR UPLOAD</p>
                             </div>
                         </div>
@@ -239,7 +286,7 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
             
             <button 
                 type="submit" 
-                disabled={isSubmitting || !solutionText.trim()} 
+                disabled={isSubmitting || !solutionText.trim() || (!solutionFile && !githubLink)} 
                 className="tactile-btn w-full bg-black text-white py-5 rounded-2xl font-black text-lg uppercase tracking-widest flex items-center justify-center gap-4 disabled:opacity-50"
             >
                 {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Deploy Solution <ArrowUpRight className="w-6 h-6" /></>}

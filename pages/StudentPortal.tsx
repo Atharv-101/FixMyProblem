@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target, ShieldCheck, Upload, FileArchive, X } from 'lucide-react';
+import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target, ShieldCheck, Upload, FileArchive, X, Github, Cpu, AlertCircle } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
@@ -17,8 +17,14 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
     const [selectedProblemIdForSubmission, setSelectedProblemIdForSubmission] = useState<string | null>(null);
     const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
     const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
+    
+    // Detailed form state
     const [solutionText, setSolutionText] = useState('');
+    const [githubLink, setGithubLink] = useState('');
+    const [techStack, setTechStack] = useState('');
+    const [limitations, setLimitations] = useState('');
     const [solutionFile, setSolutionFile] = useState<File | null>(null);
+    
     const [searchQuery, setSearchQuery] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -46,14 +52,25 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
         if (selectedProblemIdForSubmission && solutionText.trim()) {
             setIsSubmitting(true);
             try {
-                await addSolution(selectedProblemIdForSubmission, solutionText, solutionFile || undefined);
-                setSolutionText(''); 
-                setSolutionFile(null); 
+                await addSolution(selectedProblemIdForSubmission, solutionText, solutionFile || undefined, {
+                  githubLink,
+                  techStack,
+                  limitations
+                });
+                resetForm();
                 setSelectedProblemIdForSubmission(null);
                 setShowSuccessModal(true);
             } catch (error: any) { alert(`Submission Failed: ${error.message}`); }
             setIsSubmitting(false);
         }
+    };
+
+    const resetForm = () => {
+      setSolutionText('');
+      setGithubLink('');
+      setTechStack('');
+      setLimitations('');
+      setSolutionFile(null);
     };
 
     const handleOpenProblemDetails = (problem: Problem) => {
@@ -209,8 +226,8 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                 onProfileClick={onProfileClick}
             />
 
-           <Modal isOpen={!!selectedProblemIdForSubmission} onClose={() => setSelectedProblemIdForSubmission(null)} title="Deploy Protocol">
-                <form onSubmit={handleSubmit} className="space-y-6">
+           <Modal isOpen={!!selectedProblemIdForSubmission} onClose={() => { setSelectedProblemIdForSubmission(null); resetForm(); }} title="Deploy Protocol">
+                <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
                     <div>
                         <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Target Node</label>
                         <div className="p-3 bg-gray-100 border-2 border-black rounded-xl font-black text-forest text-xs md:text-sm truncate">
@@ -218,14 +235,47 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                         </div>
                     </div>
 
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2 flex items-center gap-1.5"><Github className="w-3 h-3"/> GitHub Repository Link</label>
+                          <input 
+                            type="url"
+                            className="w-full border-2 border-black rounded-xl p-4 font-bold bg-paper outline-none text-xs md:text-sm transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none"
+                            placeholder="https://github.com/user/repo"
+                            value={githubLink}
+                            onChange={e => setGithubLink(e.target.value)}
+                          />
+                      </div>
+                      <div>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2 flex items-center gap-1.5"><Cpu className="w-3 h-3"/> Tech Stack Used</label>
+                          <input 
+                            type="text"
+                            className="w-full border-2 border-black rounded-xl p-4 font-bold bg-paper outline-none text-xs md:text-sm transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none"
+                            placeholder="React, Tailwind, Node.js..."
+                            value={techStack}
+                            onChange={e => setTechStack(e.target.value)}
+                          />
+                      </div>
+                    </div>
+
                     <div>
-                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Technical Summary</label>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">Implementation Summary</label>
                         <textarea 
                             required 
-                            className="w-full border-2 border-black rounded-xl md:rounded-2xl p-4 md:p-5 h-32 md:h-48 font-mono text-xs md:text-sm focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
+                            className="w-full border-2 border-black rounded-xl md:rounded-2xl p-4 md:p-5 h-32 md:h-40 font-mono text-xs md:text-sm focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
                             placeholder="// Briefly explain your fix or methodology..." 
                             value={solutionText} 
                             onChange={e => setSolutionText(e.target.value)} 
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2 flex items-center gap-1.5"><AlertCircle className="w-3 h-3"/> Limitations / Known Issues</label>
+                        <textarea 
+                            className="w-full border-2 border-black rounded-xl p-4 font-mono text-xs md:text-sm focus:ring-0 outline-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-1 focus:translate-y-1 focus:shadow-none bg-paper" 
+                            placeholder="// Mention any edge cases or trade-offs..." 
+                            value={limitations} 
+                            onChange={e => setLimitations(e.target.value)} 
                         />
                     </div>
 
@@ -269,7 +319,7 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                     
                     <button 
                         type="submit" 
-                        disabled={isSubmitting || !solutionFile} 
+                        disabled={isSubmitting || (!solutionFile && !githubLink)} 
                         className="tactile-btn w-full bg-forest text-white py-4 md:py-5 rounded-xl md:rounded-2xl font-black text-sm md:text-lg uppercase tracking-widest flex items-center justify-center gap-3 md:gap-4 disabled:opacity-50"
                     >
                         {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Commit Changes <ArrowUpRight className="w-5 h-5 md:w-6 md:h-6" /></>}

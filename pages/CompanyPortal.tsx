@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag, Wand2, FileArchive } from 'lucide-react';
+import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag, Wand2, FileArchive, ShieldAlert, FileText, Clock } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
@@ -43,6 +43,80 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
     
     const myProblems = problems.filter(p => p.companyId === user?.id);
     const topStudents = useMemo(() => allUsers.filter(u => u.role === UserRole.STUDENT).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 5), [allUsers]);
+
+    // LOCKED VIEW LOGIC
+    if (user?.role === UserRole.COMPANY && !user.isVerified) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center p-6 pt-32 overflow-hidden relative">
+                {/* Decorative background grid */}
+                <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                
+                <div className="max-w-3xl w-full relative z-10 animate-pop">
+                    <div className="tactile-card bg-white p-10 md:p-20 rounded-[3rem] border-4 border-black shadow-[12px_12px_0px_0px_rgba(253,224,71,1)] relative overflow-hidden text-center">
+                        <div className="absolute top-[-20px] right-[-20px] p-4 opacity-5">
+                            <ShieldAlert className="w-64 h-64" />
+                        </div>
+
+                        <div className="w-24 h-24 bg-citrus text-black rounded-full border-4 border-black flex items-center justify-center mx-auto mb-10 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] animate-bounce">
+                           <ShieldAlert className="w-12 h-12" />
+                        </div>
+
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black text-citrus rounded-xl text-[10px] font-black uppercase tracking-widest mb-8 border-2 border-citrus shadow-[3px_3px_0px_0px_rgba(255,255,255,1)]">
+                            <Clock className="w-3.5 h-3.5 animate-pulse" /> Manual Audit In Progress
+                        </div>
+
+                        <h1 className="text-4xl md:text-6xl font-black text-black tracking-tighter leading-none mb-6">
+                            Entity <span className="text-coral italic">Restricted.</span>
+                        </h1>
+                        
+                        <p className="text-gray-500 font-bold text-lg md:text-xl leading-relaxed mb-12 max-w-xl mx-auto">
+                            The grid requires manual verification for all <span className="text-black font-black">Company Nodes.</span> Our administrators are currently auditing your institutional details and documents. 😁
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-12">
+                           <div className="p-6 bg-gray-50 border-2 border-black rounded-2xl flex items-start gap-4">
+                              <FileText className="w-6 h-6 text-coral shrink-0" />
+                              <div>
+                                <h4 className="font-black text-xs uppercase tracking-widest">Next Step</h4>
+                                <p className="text-[10px] font-bold text-gray-400 mt-1 leading-relaxed italic">"Check your digital mail for document request protocols."</p>
+                              </div>
+                           </div>
+                           <div className="p-6 bg-gray-50 border-2 border-black rounded-2xl flex items-start gap-4">
+                              <Activity className="w-6 h-6 text-forest shrink-0" />
+                              <div>
+                                <h4 className="font-black text-xs uppercase tracking-widest">SLA Time</h4>
+                                <p className="text-[10px] font-bold text-gray-400 mt-1 leading-relaxed italic">"Verification typically takes 24-48 standard grid cycles."</p>
+                              </div>
+                           </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button 
+                                onClick={() => setIsProfileOpen(true)}
+                                className="tactile-btn flex items-center justify-center gap-3 px-8 py-4 bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-forest transition-all"
+                            >
+                                <Edit2 className="w-4 h-4" /> Reconfigure Profile
+                            </button>
+                            <a 
+                                href="mailto:support@fixmyproblem.in"
+                                className="tactile-btn flex items-center justify-center gap-3 px-8 py-4 bg-transparent border-2 border-black text-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-citrus transition-all"
+                            >
+                                <Info className="w-4 h-4" /> Contact Support
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-12 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
+                            Protocol ID: {user.id.slice(0, 12)} • STATUS: PENDING_AUTH
+                        </p>
+                    </div>
+                </div>
+
+                <ProfileEditModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+            </div>
+        );
+    }
 
     const resetForm = () => {
         setTitle(''); setDesc(''); setBounty(''); setTags('');
@@ -190,7 +264,7 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                                     </h4>
                                     <div className="space-y-4">
                                         {p.solutions?.map(s => (
-                                            <div key={s.id} className={`tactile-card flex flex-col md:flex-row justify-between items-center p-5 md:p-6 rounded-2xl gap-4 ${s.isAccepted ? 'bg-citrus/10 border-forest' : 'bg-gray-50 border-black/5 shadow-none'}`}>
+                                            <div key={s.id} className={`tactile-card flex items-center justify-between p-5 md:p-6 rounded-2xl gap-4 ${s.isAccepted ? 'bg-citrus/10 border-forest' : 'bg-gray-50 border-black/5 shadow-none'}`}>
                                                 <div className="text-center md:text-left w-full md:w-auto cursor-pointer" onClick={() => onProfileClick(s.studentId)}>
                                                    <span className="font-black text-black text-base md:text-lg block hover:text-coral transition-colors">{s.studentName}</span>
                                                    <span className="text-[9px] md:text-[10px] font-black uppercase text-gray-400 tracking-widest">Execution ID: {s.id.slice(-4)}</span>

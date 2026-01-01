@@ -19,11 +19,12 @@ interface AppContextType {
   addProblem: (data: Partial<Problem>) => Promise<void>;
   editProblem: (problemId: string, data: Partial<Problem>) => Promise<void>;
   manualCloseProblem: (problemId: string) => Promise<void>;
-  addSolution: (problemId: string, content: string, file?: File) => Promise<void>;
+  addSolution: (problemId: string, content: string, file?: File, details?: { githubLink?: string, techStack?: string, limitations?: string }) => Promise<void>;
   acceptSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, paymentMethod: string) => Promise<void>;
   verifySimulationSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, status: 'VERIFIED' | 'REJECTED') => Promise<void>;
   updateUserProfile: (data: Partial<User>) => Promise<void>;
   adminBanUser: (userId: string, currentStatus: boolean) => Promise<void>;
+  adminVerifyUser: (userId: string) => Promise<void>;
   adminDeleteUser: (userId: string) => Promise<void>;
   adminDeleteProblem: (problemId: string) => Promise<void>;
   updateSiteConfig: (newConfig: Partial<SiteConfig>) => Promise<void>;
@@ -169,14 +170,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user!.uid;
     const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 1000);
-    const newUser: Partial<User> = { 
-      id: uid, username, email, name, role, 
-      university: role === UserRole.STUDENT ? extraInfo : undefined, 
-      companyName: role === UserRole.COMPANY ? extraInfo : undefined, 
-      rating: 0, leaderboardScore: 0, penaltyPoints: 0, solvedCount: 0, simSolvedCount: 0, 
-      skillLevel: 'Beginner', badges: [], reviews: [], joinedAt: new Date().toISOString(),
-      bio: '', skills: [] 
+    
+    // Logic: Companies start unverified, others (Students/Mentors) start verified or subject to email verify
+    const isVerifiedInitially = role !== UserRole.COMPANY;
+
+    const newUser: any = { 
+      id: uid, 
+      username, 
+      email, 
+      name, 
+      role, 
+      rating: 0, 
+      leaderboardScore: 0, 
+      penaltyPoints: 0, 
+      solvedCount: 0, 
+      simSolvedCount: 0, 
+      skillLevel: 'Beginner', 
+      badges: [], 
+      reviews: [], 
+      joinedAt: new Date().toISOString(),
+      bio: '', 
+      skills: [],
+      isVerified: isVerifiedInitially
     };
+
+    // Only add these fields if they have a value to avoid 'undefined' errors in Firestore
+    if (role === UserRole.STUDENT) {
+      newUser.university = extraInfo || "";
+    } else if (role === UserRole.COMPANY) {
+      newUser.companyName = extraInfo || "";
+    }
+
     await db.collection("users").doc(uid).set(newUser);
     await userCredential.user!.sendEmailVerification();
     await auth.signOut();
@@ -192,14 +216,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetPassword = (email: string) => auth.sendPasswordResetEmail(email);
 
   const addProblem = async (data: Partial<Problem>) => {
-    if (!user) return;
+    if (!user || !user.isVerified) return;
     await db.collection("problems").add({ 
         ...data, companyId: user.id, companyName: user.companyName || user.name, 
         status: 'OPEN', createdAt: new Date().toISOString() 
     });
   };
 
-  const addSolution = async (problemId: string, content: string, file?: File) => {
+  const addSolution = async (problemId: string, content: string, file?: File, details?: { githubLink?: string, techStack?: string, limitations?: string }) => {
     if (!user) return;
     const plag = detectPlagiarism(content, problemId);
     const prob = problems.find(p => p.id === problemId);
@@ -223,7 +247,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     await db.collection("problems").doc(problemId).collection("solutions").add({ 
         problemId, studentId: user.id, studentName: user.name, 
-        content, submittedAt: new Date().toISOString(), 
+        content, 
+        githubLink: details?.githubLink || "",
+        techStack: details?.techStack || "",
+        limitations: details?.limitations || "",
+        submittedAt: new Date().toISOString(), 
         isAccepted: false, isVerified: false, isRejected: false,
         reviewStatus: 'PENDING',
         aiEvaluation: aiEval,
@@ -341,6 +369,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const adminBanUser = async (id: string, s: boolean) => { await db.collection("users").doc(id).update({ isBanned: !s }); };
+  const adminVerifyUser = async (id: string) => { await db.collection("users").doc(id).update({ isVerified: true }); };
   const adminDeleteUser = async (id: string) => { await db.collection("users").doc(id).delete(); };
   const adminDeleteProblem = async (id: string) => { await db.collection("problems").doc(id).delete(); };
   const updateSiteConfig = async (c: Partial<SiteConfig>) => { await db.collection("settings").doc("global").set(c, { merge: true }); };
@@ -348,7 +377,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const manualCloseProblem = async (id: string) => { await db.collection("problems").doc(id).update({ status: 'CLOSED' }); };
 
   return (
-    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, addSolution, acceptSolution, verifySimulationSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminDeleteUser, adminDeleteProblem, updateSiteConfig, fetchSingleUser, fetchUserByUsername, clearAuditNotification }}>
+    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, addSolution, acceptSolution, verifySimulationSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminVerifyUser, adminDeleteUser, adminDeleteProblem, updateSiteConfig, fetchSingleUser, fetchUserByUsername, clearAuditNotification }}>
       {children}
     </AppContext.Provider>
   );

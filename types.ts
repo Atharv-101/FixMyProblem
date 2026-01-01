@@ -47,6 +47,7 @@ export interface User {
   profilePicUrl?: string;
   skills?: string[];
   isBanned?: boolean;
+  isVerified?: boolean; // Manual Admin verification for Companies
   joinedAt?: string;
   auditNotification?: {
     problemId: string;
@@ -84,6 +85,9 @@ export interface Solution {
   studentId: string;
   studentName: string;
   content: string;
+  githubLink?: string;
+  techStack?: string;
+  limitations?: string;
   submittedAt: string;
   isAccepted: boolean;
   isVerified?: boolean;
