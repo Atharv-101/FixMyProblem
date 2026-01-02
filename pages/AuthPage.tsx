@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole } from '../types.ts';
-import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Zap, Terminal, Shield, Lock, Cpu, ArrowRight, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Zap, Terminal, Shield, Lock, Cpu, ArrowRight, Sparkles, XCircle, RefreshCw } from 'lucide-react';
+import Modal from '../components/Modal.tsx';
 
 interface AuthPageProps {
   initialRole?: UserRole;
@@ -18,9 +19,27 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
   const [name, setName] = useState('');
   const [extraInfo, setExtraInfo] = useState('');
   const [error, setError] = useState('');
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [message, setMessage] = useState('');
+
+  const humanizeError = (rawError: string) => {
+    const err = rawError.toLowerCase();
+    if (err.includes('auth/invalid-credential') || err.includes('auth/wrong-password') || err.includes('auth/user-not-found')) {
+      return "Incorrect digital mail or access cipher. Please verify your credentials and try again.";
+    }
+    if (err.includes('auth/invalid-email')) {
+      return "The digital mail format provided is invalid. Check for typos.";
+    }
+    if (err.includes('auth/email-already-in-use')) {
+      return "This identity is already synced to the grid. Try logging in instead.";
+    }
+    if (err.includes('.edu') || err.includes('ac.xx')) {
+      return "Solver protocol requires a verified .edu or academic digital mail node.";
+    }
+    return rawError || "The grid encountered an unknown synchronization error. Please retry the protocol.";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +69,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
         setIsLogin(true);
       }
     } catch (err: any) {
-      setError(err.message || 'System error detected.');
+      setError(humanizeError(err.message));
+      setIsErrorModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -94,12 +114,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
           {message && (
              <div className="bg-forest text-white p-4 rounded-xl mb-8 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(253,224,71,1)] flex items-center animate-fade-in">
                 <CheckCircle2 className="w-4 h-4 mr-3 flex-shrink-0" /> {message}
-             </div>
-          )}
-
-          {error && (
-            <div className="bg-coral text-white p-4 rounded-xl mb-8 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center animate-fade-in">
-                <AlertTriangle className="w-4 h-4 mr-3 flex-shrink-0" /> {error}
              </div>
           )}
 
@@ -191,6 +205,39 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
            <Sparkles className="w-4 h-4" /> Secured Protocol
         </div>
       </div>
+
+      {/* User-Friendly Error Modal */}
+      <Modal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)} 
+        title="Protocol Interrupted"
+      >
+        <div className="flex flex-col items-center text-center space-y-6">
+          <div className="w-20 h-20 bg-coral text-white rounded-full flex items-center justify-center border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-pop">
+            <XCircle className="w-10 h-10" />
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black tracking-tighter uppercase">Signal Lost. 👀</h3>
+            <p className="text-sm font-bold text-gray-500 leading-relaxed">
+              {error}
+            </p>
+          </div>
+
+          <div className="w-full pt-4">
+            <button 
+              onClick={() => setIsErrorModalOpen(false)}
+              className="tactile-btn w-full bg-black text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-forest transition-all"
+            >
+              <RefreshCw className="w-4 h-4" /> Retry Authentication
+            </button>
+          </div>
+
+          <p className="text-[9px] font-black uppercase text-gray-300 tracking-[0.3em]">
+            Error Code: AUTH_SEQ_FAIL
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };

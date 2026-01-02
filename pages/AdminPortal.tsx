@@ -212,12 +212,16 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
   };
 
   const handleBulkDelete = async () => {
+    if (selectedProblemIds.length === 0) return;
     if (confirm(`CRITICAL: You are about to permanently extract and WIPE ${selectedProblemIds.length} nodes from the grid. Proceed?`)) {
         setIsBulkDeleting(true);
         try {
+            const count = selectedProblemIds.length;
             await bulkDeleteProblems(selectedProblemIds);
-            setSelectedProblemIds([]);
+            setSelectedProblemIds([]); // Clear selection after processing
+            alert(`Grid Extraction Complete: ${count} nodes permanently wiped from Firebase.`);
         } catch (e) {
+            console.error("Extraction Protocol Failure:", e);
             alert("Bulk extraction failed. Grid sync lost.");
         } finally {
             setIsBulkDeleting(false);

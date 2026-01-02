@@ -173,7 +173,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const uid = userCredential.user!.uid;
     const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 1000);
     
-    // Logic: Companies start unverified, others (Students/Mentors) start verified or subject to email verify
     const isVerifiedInitially = role !== UserRole.COMPANY;
 
     const newUser: any = { 
@@ -196,7 +195,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isVerified: isVerifiedInitially
     };
 
-    // Only add these fields if they have a value to avoid 'undefined' errors in Firestore
     if (role === UserRole.STUDENT) {
       newUser.university = extraInfo || "";
     } else if (role === UserRole.COMPANY) {
@@ -394,15 +392,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const adminBanUser = async (id: string, s: boolean) => { await db.collection("users").doc(id).update({ isBanned: !s }); };
   const adminVerifyUser = async (id: string) => { await db.collection("users").doc(id).update({ isVerified: true }); };
   const adminDeleteUser = async (id: string) => { await db.collection("users").doc(id).delete(); };
-  const adminDeleteProblem = async (id: string) => { await db.collection("problems").doc(id).delete(); };
+  
+  const adminDeleteProblem = async (id: string) => { 
+    if (!user || user.role !== UserRole.ADMIN) return;
+    const solSnap = await db.collection("problems").doc(id).collection("solutions").get();
+    const batch = db.batch();
+    solSnap.docs.forEach(doc => batch.delete(doc.ref));
+    batch.delete(db.collection("problems").doc(id));
+    await batch.commit();
+  };
 
   const bulkDeleteProblems = async (ids: string[]) => {
-    if (!user || user.role !== UserRole.ADMIN) return;
-    const batch = db.batch();
+    if (!user || user.role !== UserRole.ADMIN || ids.length === 0) return;
+    
+    // 1. Primary Wipe: Atomic delete of all problem nodes for instant UI update
+    const mainBatch = db.batch();
     ids.forEach(id => {
-        batch.delete(db.collection("problems").doc(id));
+      mainBatch.delete(db.collection("problems").doc(id));
     });
-    await batch.commit();
+    await mainBatch.commit();
+
+    // 2. Secondary Cleanup: Sequential cleanup of sub-collections (solutions)
+    // Best effort: we run this to keep the DB clean, but failures here won't revert the primary wipe.
+    for (const id of ids) {
+      try {
+        const solSnap = await db.collection("problems").doc(id).collection("solutions").get();
+        if (!solSnap.empty) {
+          const subBatch = db.batch();
+          solSnap.docs.forEach(doc => subBatch.delete(doc.ref));
+          await subBatch.commit();
+        }
+      } catch (err) {
+        console.warn(`Solution cleanup node ${id} detached but sub-collections persisted:`, err);
+      }
+    }
   };
 
   const updateSiteConfig = async (c: Partial<SiteConfig>) => { await db.collection("settings").doc("global").set(c, { merge: true }); };
