@@ -17,6 +17,7 @@ interface AppContextType {
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
   addProblem: (data: Partial<Problem>) => Promise<void>;
+  bulkAddProblems: (problemsData: Partial<Problem>[]) => Promise<void>;
   editProblem: (problemId: string, data: Partial<Problem>) => Promise<void>;
   manualCloseProblem: (problemId: string) => Promise<void>;
   addSolution: (problemId: string, content: string, file?: File, details?: { githubLink?: string, techStack?: string, limitations?: string }) => Promise<void>;
@@ -27,6 +28,7 @@ interface AppContextType {
   adminVerifyUser: (userId: string) => Promise<void>;
   adminDeleteUser: (userId: string) => Promise<void>;
   adminDeleteProblem: (problemId: string) => Promise<void>;
+  bulkDeleteProblems: (problemIds: string[]) => Promise<void>;
   updateSiteConfig: (newConfig: Partial<SiteConfig>) => Promise<void>;
   fetchSingleUser: (userId: string) => Promise<User | null>;
   fetchUserByUsername: (username: string) => Promise<User | null>;
@@ -223,6 +225,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const bulkAddProblems = async (problemsData: Partial<Problem>[]) => {
+    if (!user || user.role !== UserRole.ADMIN) return;
+    
+    const batch = db.batch();
+    const problemsCol = db.collection("problems");
+    
+    problemsData.forEach((data) => {
+        const newDocRef = problemsCol.doc();
+        batch.set(newDocRef, {
+            ...data,
+            companyId: user.id,
+            companyName: data.companyName || 'Simulation Hub',
+            status: 'OPEN',
+            createdAt: new Date().toISOString(),
+            isSimulation: data.isSimulation ?? true
+        });
+    });
+    
+    await batch.commit();
+  };
+
   const addSolution = async (problemId: string, content: string, file?: File, details?: { githubLink?: string, techStack?: string, limitations?: string }) => {
     if (!user) return;
     const plag = detectPlagiarism(content, problemId);
@@ -372,12 +395,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const adminVerifyUser = async (id: string) => { await db.collection("users").doc(id).update({ isVerified: true }); };
   const adminDeleteUser = async (id: string) => { await db.collection("users").doc(id).delete(); };
   const adminDeleteProblem = async (id: string) => { await db.collection("problems").doc(id).delete(); };
+
+  const bulkDeleteProblems = async (ids: string[]) => {
+    if (!user || user.role !== UserRole.ADMIN) return;
+    const batch = db.batch();
+    ids.forEach(id => {
+        batch.delete(db.collection("problems").doc(id));
+    });
+    await batch.commit();
+  };
+
   const updateSiteConfig = async (c: Partial<SiteConfig>) => { await db.collection("settings").doc("global").set(c, { merge: true }); };
   const editProblem = async (id: string, d: any) => { await db.collection("problems").doc(id).update(d); };
   const manualCloseProblem = async (id: string) => { await db.collection("problems").doc(id).update({ status: 'CLOSED' }); };
 
   return (
-    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, addSolution, acceptSolution, verifySimulationSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminVerifyUser, adminDeleteUser, adminDeleteProblem, updateSiteConfig, fetchSingleUser, fetchUserByUsername, clearAuditNotification }}>
+    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, bulkAddProblems, addSolution, acceptSolution, verifySimulationSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminVerifyUser, adminDeleteUser, adminDeleteProblem, bulkDeleteProblems, updateSiteConfig, fetchSingleUser, fetchUserByUsername, clearAuditNotification }}>
       {children}
     </AppContext.Provider>
   );

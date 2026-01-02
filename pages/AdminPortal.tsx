@@ -1,29 +1,35 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, User, Solution } from '../types.ts';
 import { 
   Users, CheckCircle2, Star, Trophy, Loader2, Shield, Activity, 
   Terminal, Cpu, IndianRupee, Settings, Trash2, Ban, Plus, 
   Briefcase, Layers, Info, Tag, Wand2, AlertTriangle, BarChart3, 
-  BrainCircuit, Layout, Zap, Edit2, Eye, XCircle, Download, FileArchive, ArrowUpRight, ShieldCheck, UserCheck
+  BrainCircuit, Layout, Zap, Edit2, Eye, XCircle, Download, FileArchive, ArrowUpRight, ShieldCheck, UserCheck, FileSpreadsheet, X, HelpCircle,
+  Square, CheckSquare, Trash
 } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
 import { refineProblemDescription } from '../services/geminiService.ts';
+import * as XLSX from 'xlsx';
 
 interface AdminPortalProps {
   onProfileClick: (id: string) => void;
 }
 
 const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
-  const { allUsers, problems, siteConfig, updateSiteConfig, adminDeleteUser, adminDeleteProblem, adminBanUser, adminVerifyUser, addProblem, editProblem, verifySimulationSolution } = useStore();
+  const { allUsers, problems, siteConfig, updateSiteConfig, adminDeleteUser, adminDeleteProblem, bulkDeleteProblems, adminBanUser, adminVerifyUser, addProblem, bulkAddProblems, editProblem, verifySimulationSolution } = useStore();
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'USERS' | 'CONTENT' | 'SIMULATION_AUDITS' | 'SETTINGS'>('OVERVIEW');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
   
+  // Selection State
+  const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   // Simulation Review State
   const [reviewingItem, setReviewingItem] = useState<{ solution: Solution, problem: Problem } | null>(null);
   const [auditRating, setAuditRating] = useState(5);
@@ -32,6 +38,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
 
   // Post/Edit Simulation State
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -42,6 +49,11 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
   const [stepsToReproduce, setStepsToReproduce] = useState('');
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM');
   const [tags, setTags] = useState('');
+
+  // Bulk Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bulkStatus, setBulkStatus] = useState<'idle' | 'parsing' | 'uploading' | 'success' | 'error'>('idle');
+  const [parsedCount, setParsedCount] = useState(0);
 
   const stats = useMemo(() => {
     const totalUsers = allUsers.length;
@@ -184,13 +196,116 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
       }
   }
 
+  // Selection Logic
+  const toggleSelection = (id: string) => {
+    setSelectedProblemIds(prev => 
+        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProblemIds.length === problems.length) {
+        setSelectedProblemIds([]);
+    } else {
+        setSelectedProblemIds(problems.map(p => p.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (confirm(`CRITICAL: You are about to permanently extract and WIPE ${selectedProblemIds.length} nodes from the grid. Proceed?`)) {
+        setIsBulkDeleting(true);
+        try {
+            await bulkDeleteProblems(selectedProblemIds);
+            setSelectedProblemIds([]);
+        } catch (e) {
+            alert("Bulk extraction failed. Grid sync lost.");
+        } finally {
+            setIsBulkDeleting(false);
+        }
+    }
+  };
+
   const handleOpenProblemDetails = (problem: Problem) => {
     setCurrentProblemForDetails(problem);
     setShowProblemDetailModal(true);
   };
 
+  // Automated Bulk Upload Logic
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFileAutomatically(file);
+    }
+  };
+
+  const processFileAutomatically = async (file: File) => {
+    setBulkStatus('parsing');
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (json.length === 0) throw new Error("Spreadsheet contains no usable nodes.");
+
+        // Robust Mapping Protocol with Header Normalization
+        const problemsData: Partial<Problem>[] = json.map(item => {
+          // Normalize keys: convert everything to UPPER_SNAKE_CASE to match your CSV
+          const normalized: Record<string, any> = {};
+          Object.keys(item).forEach(key => {
+            const normalizedKey = key.trim().toUpperCase().replace(/\s+/g, '_');
+            normalized[normalizedKey] = item[key];
+          });
+
+          const rawTags = normalized.METADATA_TAGS || normalized.TAGS || "";
+          const mappedTags = typeof rawTags === 'string' 
+            ? rawTags.split(',').map(t => t.trim()).filter(t => t)
+            : Array.isArray(rawTags) ? rawTags : [];
+
+          return {
+            title: String(normalized.SIMULATION_TITLE || normalized.TITLE || "Unnamed Protocol"),
+            description: String(normalized.TECHNICAL_BRIEF || normalized.DESCRIPTION || ""),
+            expectedBehavior: String(normalized.TARGET_OUTCOME || normalized.EXPECTED_BEHAVIOR || ""),
+            currentBehavior: String(normalized.CURRENT_ERROR_OR_BUG || normalized.CURRENT_BEHAVIOR || ""),
+            techStack: String(normalized.SYSTEM_STACK || normalized.TECH_STACK || ""),
+            stepsToReproduce: String(normalized.STEPS_TO_REPRODUCE || ""),
+            impact: String(normalized.IMPACT || "Normal"),
+            difficulty: (String(normalized.TIER_LEVEL || normalized.DIFFICULTY || "MEDIUM").toUpperCase()) as any,
+            tags: mappedTags,
+            bounty: String(normalized.BOUNTY || '₹0 (Practice)'),
+            isSimulation: true,
+            companyName: 'Simulation Hub'
+          };
+        });
+
+        setParsedCount(problemsData.length);
+        setBulkStatus('uploading');
+        
+        await bulkAddProblems(problemsData);
+        setBulkStatus('success');
+        
+        // Auto-close modal after successful synchronization
+        setTimeout(() => {
+          setIsBulkModalOpen(false);
+          setBulkStatus('idle');
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }, 2500);
+
+      } catch (err: any) {
+        console.error("Bulk Protocol Failure:", err);
+        setBulkStatus('error');
+        alert(`Grid injection failed: ${err.message}`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
-    <div className="min-h-screen bg-transparent pt-32 px-4 pb-12">
+    <div className="min-h-screen bg-transparent pt-32 px-4 pb-12 relative">
       <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}
@@ -210,19 +325,27 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
               </div>
             </div>
             
-            <button 
-                onClick={() => { resetForm(); setIsPostModalOpen(true); }}
-                className="tactile-btn px-10 py-6 bg-forest text-citrus rounded-[2rem] font-black text-xl flex items-center justify-center gap-4 hover:bg-black transition-all shrink-0 w-full md:w-auto shadow-xl"
-            >
-                <Plus className="w-6 h-6" /> Deploy Simulation
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <button 
+                    onClick={() => { setBulkStatus('idle'); setIsBulkModalOpen(true); }}
+                    className="tactile-btn px-8 py-6 bg-white text-black border-4 border-black rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 hover:bg-citrus transition-all shrink-0 shadow-xl"
+                >
+                    <FileSpreadsheet className="w-6 h-6" /> Bulk Protocol
+                </button>
+                <button 
+                    onClick={() => { resetForm(); setIsPostModalOpen(true); }}
+                    className="tactile-btn px-10 py-6 bg-forest text-citrus rounded-[2rem] font-black text-xl flex items-center justify-center gap-4 hover:bg-black transition-all shrink-0 shadow-xl"
+                >
+                    <Plus className="w-6 h-6" /> Deploy Simulation
+                </button>
+            </div>
         </div>
 
         <div className="flex space-x-4 mb-10 overflow-x-auto pb-4 reveal">
            {['OVERVIEW', 'USERS', 'CONTENT', 'SIMULATION_AUDITS', 'SETTINGS'].map((tab) => (
              <button 
                 key={tab}
-                onClick={() => setActiveTab(tab as any)} 
+                onClick={() => { setActiveTab(tab as any); setSelectedProblemIds([]); }} 
                 className={`tactile-btn px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-black text-white' : 'bg-white text-black hover:bg-citrus'}`}
              >
                 {tab.replace('_', ' ')} {tab === 'SIMULATION_AUDITS' && pendingSimulationAudits.length > 0 && <span className="ml-2 bg-coral text-white px-2 py-0.5 rounded-full text-[8px]">{pendingSimulationAudits.length}</span>}
@@ -378,11 +501,16 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
         )}
 
         {activeTab === 'CONTENT' && (
-            <div className="tactile-card bg-white rounded-[2.5rem] overflow-hidden reveal">
+            <div className="tactile-card bg-white rounded-[2.5rem] overflow-hidden reveal mb-20">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                     <thead className="bg-gray-50 text-[10px] uppercase text-gray-400 font-black tracking-widest border-b-2 border-black/5">
                         <tr>
+                        <th className="p-6 w-12">
+                            <button onClick={toggleSelectAll} className="hover:text-black transition-colors">
+                                {selectedProblemIds.length === problems.length ? <CheckSquare className="w-5 h-5 text-forest" /> : <Square className="w-5 h-5" />}
+                            </button>
+                        </th>
                         <th className="p-6 min-w-[200px]">Challenge Brief</th>
                         <th className="p-6 min-w-[100px]">Type</th>
                         <th className="p-6 min-w-[80px]">Difficulty</th>
@@ -391,8 +519,15 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                         </tr>
                     </thead>
                     <tbody className="divide-y-2 divide-gray-50">
-                        {problems.map(p => (
-                        <tr key={p.id} className="hover:bg-gray-50 group">
+                        {problems.map(p => {
+                            const isSelected = selectedProblemIds.includes(p.id);
+                            return (
+                        <tr key={p.id} className={`hover:bg-gray-50 group transition-colors ${isSelected ? 'bg-citrus/5' : ''}`}>
+                            <td className="p-6">
+                                <button onClick={() => toggleSelection(p.id)} className="transition-all hover:scale-110">
+                                    {isSelected ? <CheckSquare className="w-5 h-5 text-forest" /> : <Square className="w-5 h-5 text-gray-300" />}
+                                </button>
+                            </td>
                             <td 
                                 className="p-6 font-bold text-black max-w-xs truncate text-lg group-hover:text-coral transition-colors cursor-pointer" 
                                 title={p.title}
@@ -440,9 +575,41 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                                 </div>
                             </td>
                         </tr>
-                        ))}
+                        )})}
                     </tbody>
                     </table>
+                </div>
+            </div>
+        )}
+
+        {/* Bulk Actions Panel */}
+        {activeTab === 'CONTENT' && selectedProblemIds.length > 0 && (
+            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-2xl px-6 animate-pop">
+                <div className="bg-coral text-white p-6 rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black text-xl border-2 border-white/20">
+                            {selectedProblemIds.length}
+                        </div>
+                        <div>
+                            <p className="font-black uppercase tracking-widest text-xs">Extraction Queue Active</p>
+                            <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest">Selected nodes ready for WIPE protocol</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setSelectedProblemIds([])}
+                            className="px-6 py-3 bg-black/20 hover:bg-black/30 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={handleBulkDelete}
+                            disabled={isBulkDeleting}
+                            className="px-8 py-3 bg-white text-coral rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                        >
+                            {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash className="w-4 h-4" /> Wipe Selected Nodes</>}
+                        </button>
+                    </div>
                 </div>
             </div>
         )}
@@ -535,6 +702,56 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
             </div>
         )}
       </div>
+
+      {/* Bulk Upload Modal */}
+      <Modal isOpen={isBulkModalOpen} onClose={() => !['parsing', 'uploading'].includes(bulkStatus) && setIsBulkModalOpen(false)} title="Bulk Protocol Deployment">
+        <div className="space-y-8">
+            <div className="bg-citrus/10 border-2 border-black p-6 rounded-3xl">
+                <h4 className="font-black text-lg mb-4 flex items-center gap-2"><HelpCircle className="w-5 h-5" /> Schema Protocol</h4>
+                <p className="text-xs font-bold text-gray-600 mb-6 leading-relaxed">
+                    Attach an Excel/CSV file. The grid will automatically parse and inject the problems into the simulation database. Headers should include Title, Brief, Outcome, Error, Stack, etc.
+                </p>
+                <div className="grid grid-cols-2 gap-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-forest" /> Simulation Title</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-forest" /> Technical Brief</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-forest" /> Target Outcome</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-forest" /> Current Error</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-forest" /> System Stack</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-forest" /> Tier Level</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-forest" /> Tags</div>
+                </div>
+            </div>
+
+            <div 
+              onClick={() => bulkStatus === 'idle' && fileInputRef.current?.click()}
+              className={`w-full border-4 border-dashed border-black rounded-[2.5rem] p-12 flex flex-col items-center justify-center cursor-pointer transition-all ${bulkStatus !== 'idle' ? 'bg-gray-50 opacity-50 cursor-wait' : 'hover:bg-citrus/5 bg-paper'}`}
+            >
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx,.xls,.csv" />
+                
+                {bulkStatus === 'idle' ? (
+                    <>
+                        <Plus className="w-12 h-12 text-gray-300 mb-4" />
+                        <p className="text-base font-black text-black uppercase tracking-widest">Select Spreadsheet Node</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mt-2">.xlsx, .csv supported</p>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center gap-4 animate-pop">
+                        <div className="flex items-center gap-3">
+                            {bulkStatus !== 'success' && <Loader2 className="w-8 h-8 animate-spin text-coral" />}
+                            <span className="font-black text-base uppercase tracking-widest">
+                                {bulkStatus === 'parsing' ? 'Deciphering Node...' : bulkStatus === 'uploading' ? `Injecting ${parsedCount} Records...` : 'Synchronization Complete!'}
+                            </span>
+                        </div>
+                        {bulkStatus === 'success' && <CheckCircle2 className="w-16 h-16 text-forest" />}
+                    </div>
+                )}
+            </div>
+
+            <p className="text-center text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
+                {bulkStatus === 'idle' ? "GRID STANDBY: Awaiting Payload" : "PROTOCOL ACTIVE: Writing to Firestore"}
+            </p>
+        </div>
+      </Modal>
 
       {/* Post/Edit Simulation Modal */}
       <Modal isOpen={isPostModalOpen} onClose={() => setIsPostModalOpen(false)} title={editingId ? "Reconfigure Simulation" : "Deploy Practice Simulation"}>

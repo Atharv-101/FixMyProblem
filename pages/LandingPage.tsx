@@ -20,8 +20,9 @@ import Testimonials from '../components/landing/Testimonials.tsx';
 import FAQ from '../components/landing/FAQ.tsx';
 import CTA from '../components/landing/CTA.tsx';
 import LandingFooter from '../components/landing/LandingFooter.tsx';
+import PracticeStats from '../components/landing/PracticeStats.tsx';
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW';
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'SIMULATIONS';
 
 interface LandingPageProps {
   onLoginClick: (role: UserRole) => void;
@@ -48,7 +49,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
     const totalStudents = allUsers.filter(u => u.role === UserRole.STUDENT).length;
     const openProblems = problems.filter(p => p.status === 'OPEN').length;
     const totalProblems = problems.length;
-    return { totalUsers, totalCompanies, totalStudents, openProblems, totalProblems };
+    const practiceCount = problems.filter(p => p.isSimulation || p.companyName.toLowerCase().includes('practice')).length;
+    
+    return { totalUsers, totalCompanies, totalStudents, openProblems, totalProblems, practiceCount };
   }, [allUsers, problems]);
 
   const topStudents = useMemo(() => 
@@ -75,6 +78,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
 
       <Hero onLoginClick={onLoginClick} stats={stats} />
       
+      <PracticeStats count={stats.practiceCount} onViewChange={onViewChange} />
+
       <About />
       
       <Offerings />

@@ -16,7 +16,8 @@
     "firebase": "^12.7.0",
     "@supabase/supabase-js": "^2.89.0",
     "three": "^0.182.0",
-    "canvas-confetti": "1.9.3"
+    "canvas-confetti": "1.9.3",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
