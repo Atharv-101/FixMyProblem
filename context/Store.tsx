@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { User, Problem, UserRole, Solution, Review, SiteConfig, Payment, Badge, SkillLevel } from '../types.ts';
 import { auth, db } from '../services/firebase.ts';
 import { supabase } from '../services/supabase.ts';
@@ -60,28 +60,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const solutionUnsubscribes = useRef<Record<string, () => void>>({});
 
-  const detectPlagiarism = (content: string, problemId: string): { similarity: number, status: 'CLEAN' | 'FLAGGED' | 'PENALIZED' } => {
-    const currentProblem = problems.find(p => p.id === problemId);
-    if (!currentProblem || !currentProblem.solutions) return { similarity: 0, status: 'CLEAN' };
-
-    let maxSim = 0;
-    currentProblem.solutions.forEach(s => {
-      const common = s.content.split('').filter((c, i) => content[i] === c).length;
-      const sim = (common / Math.max(content.length, s.content.length)) * 100;
-      if (sim > maxSim) maxSim = sim;
-    });
-
-    if (maxSim > 90) return { similarity: maxSim, status: 'PENALIZED' };
-    if (maxSim > 80) return { similarity: maxSim, status: 'FLAGGED' };
-    return { similarity: maxSim, status: 'CLEAN' };
-  };
-
   useEffect(() => {
     const unsub = db.collection("settings").doc("global").onSnapshot((doc) => {
         if (doc.exists) setSiteConfig(doc.data() as SiteConfig);
-    }, (error) => {
-        console.warn("Global settings access restricted:", error.message);
-    });
+    }, (error) => console.warn("Global settings restricted:", error.message));
     return () => unsub();
   }, []);
 
@@ -94,9 +76,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (!userData.isBanned) setUser(userData);
             else auth.signOut();
           }
-        }, (error) => {
-            console.error("User profile sync error:", error.message);
-        });
+        }, (error) => console.error("Profile sync error:", error.message));
         return () => unsub();
       } else { 
         setUser(null); 
@@ -110,10 +90,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsub = db.collection("users").onSnapshot((snapshot) => {
         const usersList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as User));
         setAllUsers(usersList);
-    }, (error) => {
-        console.warn("Users list restricted for guest/role:", error.message);
-        setAllUsers(user ? [user] : []);
-    });
+    }, (error) => setAllUsers(user ? [user] : []));
     return () => unsub();
   }, [user?.id]);
 
@@ -127,16 +104,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (!solutionUnsubscribes.current[p.id]) {
               solutionUnsubscribes.current[p.id] = db.collection("problems").doc(p.id).collection("solutions").onSnapshot((s) => {
                   setProblems(current => current.map(cp => cp.id === p.id ? { ...cp, solutions: s.docs.map(sd => ({ id: sd.id, ...sd.data() } as Solution)) } : cp));
-              }, (error) => {
-                  // Silently handle nested solutions permissions
               });
             }
           });
         }
-      }, (error) => {
-          console.warn("Problems feed restricted:", error.message);
-          setProblems([]);
-      });
+      }, (error) => setProblems([]));
 
     return () => {
       unsub();
@@ -145,302 +117,169 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [user?.id]);
 
-  const clearAuditNotification = async () => {
-    if (!user) return;
-    await db.collection("users").doc(user.id).update({ auditNotification: null });
-  };
-
-  const fetchSingleUser = async (userId: string) => {
-    try {
-        const doc = await db.collection("users").doc(userId).get();
-        return doc.exists ? { id: doc.id, ...doc.data() } as User : null;
-    } catch { return null; }
-  };
-
-  const fetchUserByUsername = async (username: string) => {
-    try {
-        const snap = await db.collection("users").where("username", "==", username).limit(1).get();
-        return !snap.empty ? { id: snap.docs[0].id, ...snap.docs[0].data() } as User : null;
-    } catch { return null; }
-  };
-
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     await auth.signInWithEmailAndPassword(email, password);
-  };
+  }, []);
 
-  const register = async (email: string, password: string, role: UserRole, name: string, extraInfo: string) => {
+  const register = useCallback(async (email: string, password: string, role: UserRole, name: string, extraInfo: string) => {
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const uid = userCredential.user!.uid;
     const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 1000);
-    
     const isVerifiedInitially = role !== UserRole.COMPANY;
 
     const newUser: any = { 
-      id: uid, 
-      username, 
-      email, 
-      name, 
-      role, 
-      rating: 0, 
-      leaderboardScore: 0, 
-      penaltyPoints: 0, 
-      solvedCount: 0, 
-      simSolvedCount: 0, 
-      skillLevel: 'Beginner', 
-      badges: [], 
-      reviews: [], 
-      joinedAt: new Date().toISOString(),
-      bio: '', 
-      skills: [],
+      id: uid, username, email, name, role, 
+      rating: 0, leaderboardScore: 0, penaltyPoints: 0, solvedCount: 0, 
+      simSolvedCount: 0, skillLevel: 'Beginner', badges: [], reviews: [], 
+      joinedAt: new Date().toISOString(), bio: '', skills: [],
       isVerified: isVerifiedInitially
     };
 
-    if (role === UserRole.STUDENT) {
-      newUser.university = extraInfo || "";
-    } else if (role === UserRole.COMPANY) {
-      newUser.companyName = extraInfo || "";
-    }
+    if (role === UserRole.STUDENT) newUser.university = extraInfo || "";
+    else if (role === UserRole.COMPANY) newUser.companyName = extraInfo || "";
 
     await db.collection("users").doc(uid).set(newUser);
     await userCredential.user!.sendEmailVerification();
     await auth.signOut();
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     Object.values(solutionUnsubscribes.current).forEach((un: any) => un());
     solutionUnsubscribes.current = {};
     setUser(null);
     await auth.signOut();
-  };
+  }, []);
 
-  const resetPassword = (email: string) => auth.sendPasswordResetEmail(email);
+  const resetPassword = useCallback((email: string) => auth.sendPasswordResetEmail(email), []);
 
-  const addProblem = async (data: Partial<Problem>) => {
+  const addProblem = useCallback(async (data: Partial<Problem>) => {
     if (!user || !user.isVerified) return;
     await db.collection("problems").add({ 
         ...data, companyId: user.id, companyName: user.companyName || user.name, 
         status: 'OPEN', createdAt: new Date().toISOString() 
     });
-  };
+  }, [user]);
 
-  const bulkAddProblems = async (problemsData: Partial<Problem>[]) => {
+  const bulkAddProblems = useCallback(async (problemsData: Partial<Problem>[]) => {
     if (!user || user.role !== UserRole.ADMIN) return;
-    
     const batch = db.batch();
-    const problemsCol = db.collection("problems");
-    
     problemsData.forEach((data) => {
-        const newDocRef = problemsCol.doc();
+        const newDocRef = db.collection("problems").doc();
         batch.set(newDocRef, {
-            ...data,
-            companyId: user.id,
-            companyName: data.companyName || 'Simulation Hub',
-            status: 'OPEN',
-            createdAt: new Date().toISOString(),
+            ...data, companyId: user.id, companyName: data.companyName || 'Simulation Hub',
+            status: 'OPEN', createdAt: new Date().toISOString(),
             isSimulation: data.isSimulation ?? true
         });
     });
-    
     await batch.commit();
-  };
+  }, [user]);
 
-  const addSolution = async (problemId: string, content: string, file?: File, details?: { githubLink?: string, techStack?: string, limitations?: string }) => {
-    if (!user) return;
-    const plag = detectPlagiarism(content, problemId);
-    const prob = problems.find(p => p.id === problemId);
-    const aiEval = await evaluateSolutionWithAI(prob?.description || "", content);
-
-    let attachmentUrl = null;
-    if (file) {
-      const path = `solutions/${problemId}/${user.id}/${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage.from('solutions').upload(path, file);
-      
-      if (uploadError) {
-          console.error("Supabase Storage Error:", uploadError);
-          if (uploadError.message.includes("Bucket not found")) {
-              throw new Error("Critical: 'solutions' bucket missing in Supabase. Check dashboard.");
-          }
-          throw uploadError;
-      }
-      
-      attachmentUrl = supabase.storage.from('solutions').getPublicUrl(path).data.publicUrl;
+  const bulkDeleteProblems = useCallback(async (ids: string[]) => {
+    if (!user || user.role !== UserRole.ADMIN || ids.length === 0) return;
+    
+    // Chunking logic to stay within Firestore limits
+    const CHUNK_SIZE = 450; 
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+        chunks.push(ids.slice(i, i + CHUNK_SIZE));
     }
 
-    await db.collection("problems").doc(problemId).collection("solutions").add({ 
-        problemId, studentId: user.id, studentName: user.name, 
-        content, 
-        githubLink: details?.githubLink || "",
-        techStack: details?.techStack || "",
-        limitations: details?.limitations || "",
-        submittedAt: new Date().toISOString(), 
-        isAccepted: false, isVerified: false, isRejected: false,
-        reviewStatus: 'PENDING',
-        aiEvaluation: aiEval,
-        plagiarismMetadata: plag,
-        attachmentUrl 
-    });
-  };
+    // Phase 1: Atomic wipe of all problem nodes across parallel batches
+    await Promise.all(chunks.map(async (chunk) => {
+        const batch = db.batch();
+        chunk.forEach(id => batch.delete(db.collection("problems").doc(id)));
+        return batch.commit();
+    }));
 
-  const verifySimulationSolution = async (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, status: 'VERIFIED' | 'REJECTED') => {
+    // Phase 2: Background cleanup of sub-collections (solutions)
+    // We do this individually to avoid overwhelming the connection and handle potential fetch errors gracefully
+    for (const id of ids) {
+        try {
+            const solSnap = await db.collection("problems").doc(id).collection("solutions").get();
+            if (!solSnap.empty) {
+                const subBatch = db.batch();
+                solSnap.docs.forEach(doc => subBatch.delete(doc.ref));
+                await subBatch.commit();
+            }
+        } catch (err) {
+            console.warn(`Background cleanup skipped for node ${id}:`, err);
+        }
+    }
+  }, [user]);
+
+  const verifySimulationSolution = useCallback(async (pId: string, sId: string, stId: string, rating: number, feedback: string, status: 'VERIFIED' | 'REJECTED') => {
     if (!user || (user.role !== UserRole.MENTOR && user.role !== UserRole.ADMIN)) return;
-    
     await db.runTransaction(async (transaction) => {
-      const studentRef = db.collection("users").doc(studentId);
-      const solRef = db.collection("problems").doc(problemId).collection("solutions").doc(solutionId);
-      
+      const studentRef = db.collection("users").doc(stId);
+      const solRef = db.collection("problems").doc(pId).collection("solutions").doc(sId);
       const studentSnap = await transaction.get(studentRef);
-      const solSnap = await transaction.get(solRef);
+      if (!studentSnap.exists) throw new Error("Student node detached.");
       
-      if (!studentSnap.exists || !solSnap.exists) {
-          throw new Error("Target node or submission detached.");
-      }
-
       const studentData = studentSnap.data() as User;
-      const solData = solSnap.data() as Solution;
       const isVerified = status === 'VERIFIED';
       
-      transaction.update(solRef, { 
-        isVerified, 
-        isRejected: !isVerified, 
-        reviewStatus: status,
-        rating, 
-        feedback, 
-        mentorId: user.id, 
-        mentorName: user.name 
-      });
+      transaction.update(solRef, { isVerified, isRejected: !isVerified, reviewStatus: status, rating, feedback, mentorId: user.id, mentorName: user.name });
 
       if (isVerified) {
         const verifiedSims = (studentData.simSolvedCount || 0) + 1;
         const pastScores = (studentData.reviews || []).map(r => r.rating).slice(-4);
-        const allScores = [...pastScores, rating];
-        const rollingAvg = Math.round(allScores.reduce((a,b) => a + b, 0) / allScores.length);
-        
-        let bonusPoints = 0;
-        const earnedBadges = studentData.badges || [];
-        const newBadges: Badge[] = [];
-        BADGE_RULES.forEach(rule => {
-            if (verifiedSims >= (rule as any).threshold && !earnedBadges.find(b => b.id === rule.id)) {
-                const b = { ...rule, awardedAt: new Date().toISOString() };
-                newBadges.push(b);
-                bonusPoints += b.bonusPoints;
-            }
-        });
-
-        const plag = solData.plagiarismMetadata;
-        let penaltyInc = 0;
-        if (plag?.status === 'PENALIZED') penaltyInc = 100;
-        else if (plag?.status === 'FLAGGED') penaltyInc = 25;
-
-        const finalScore = (verifiedSims * 10) + (rollingAvg * 2) + bonusPoints - ((studentData.penaltyPoints || 0) + penaltyInc);
+        const rollingAvg = Math.round(([...pastScores, rating].reduce((a,b) => a+b, 0)) / (pastScores.length + 1));
+        const finalScore = (verifiedSims * 10) + (rollingAvg * 2) - (studentData.penaltyPoints || 0);
 
         transaction.update(studentRef, {
-            simSolvedCount: verifiedSims,
-            rollingAverage: rollingAvg,
-            skillLevel: calculateSkillLevel(rollingAvg),
-            penaltyPoints: (studentData.penaltyPoints || 0) + penaltyInc,
-            leaderboardScore: finalScore,
-            badges: [...earnedBadges, ...newBadges],
-            reviews: [...(studentData.reviews || []), {
-                id: solutionId, problemTitle: 'Simulation Exercise',
-                rating, feedback, createdAt: new Date().toISOString(),
-                companyName: `Mentor: ${user.name}`
-            }],
-            auditNotification: { 
-                problemId, 
-                problemTitle: 'Simulation Verified', 
-                status: 'VERIFIED', 
-                feedback, 
-                read: false 
-            }
+            simSolvedCount: verifiedSims, rollingAverage: rollingAvg,
+            skillLevel: calculateSkillLevel(rollingAvg), leaderboardScore: finalScore,
+            reviews: [...(studentData.reviews || []), { id: sId, problemTitle: 'Simulation Exercise', rating, feedback, createdAt: new Date().toISOString(), companyName: `Mentor: ${user.name}` }],
+            auditNotification: { problemId: pId, problemTitle: 'Simulation Verified', status: 'VERIFIED', feedback, read: false }
         });
       } else {
-        transaction.update(studentRef, {
-            auditNotification: { 
-                problemId, 
-                problemTitle: 'Simulation Review', 
-                status: 'REJECTED', 
-                feedback, 
-                read: false 
-            }
-        });
+        transaction.update(studentRef, { auditNotification: { problemId: pId, problemTitle: 'Simulation Review', status: 'REJECTED', feedback, read: false } });
       }
     });
-  };
+  }, [user]);
 
-  const acceptSolution = async (pId: string, sId: string, stId: string, r: number, f: string) => {
-      if (!user) return;
-      await db.runTransaction(async (transaction) => {
-          const studentRef = db.collection("users").doc(stId);
-          const solRef = db.collection("problems").doc(pId).collection("solutions").doc(sId);
-          const studentSnap = await transaction.get(studentRef);
-          
-          transaction.update(solRef, { isAccepted: true, rating: r, feedback: f });
-          transaction.update(db.collection("problems").doc(pId), { status: 'CLOSED' });
-          
-          if (studentSnap.exists) {
-            const data = studentSnap.data() as User;
-            transaction.update(studentRef, { solvedCount: (data.solvedCount || 0) + 1 });
-          }
-      });
-  };
-
-  const updateUserProfile = async (data: Partial<User>) => {
-    if (!user) return;
-    await db.collection("users").doc(user.id).update(data);
-  };
-
-  const adminBanUser = async (id: string, s: boolean) => { await db.collection("users").doc(id).update({ isBanned: !s }); };
-  const adminVerifyUser = async (id: string) => { await db.collection("users").doc(id).update({ isVerified: true }); };
-  const adminDeleteUser = async (id: string) => { await db.collection("users").doc(id).delete(); };
-  
-  const adminDeleteProblem = async (id: string) => { 
-    if (!user || user.role !== UserRole.ADMIN) return;
-    const solSnap = await db.collection("problems").doc(id).collection("solutions").get();
-    const batch = db.batch();
-    solSnap.docs.forEach(doc => batch.delete(doc.ref));
-    batch.delete(db.collection("problems").doc(id));
-    await batch.commit();
-  };
-
-  const bulkDeleteProblems = async (ids: string[]) => {
-    if (!user || user.role !== UserRole.ADMIN || ids.length === 0) return;
-    
-    // 1. Primary Wipe: Atomic delete of all problem nodes for instant UI update
-    const mainBatch = db.batch();
-    ids.forEach(id => {
-      mainBatch.delete(db.collection("problems").doc(id));
-    });
-    await mainBatch.commit();
-
-    // 2. Secondary Cleanup: Sequential cleanup of sub-collections (solutions)
-    // Best effort: we run this to keep the DB clean, but failures here won't revert the primary wipe.
-    for (const id of ids) {
-      try {
-        const solSnap = await db.collection("problems").doc(id).collection("solutions").get();
-        if (!solSnap.empty) {
-          const subBatch = db.batch();
-          solSnap.docs.forEach(doc => subBatch.delete(doc.ref));
-          await subBatch.commit();
+  const value = useMemo(() => ({
+    user, loading, allUsers, problems, payments, siteConfig,
+    login, register, logout, resetPassword, addProblem, bulkAddProblems,
+    addSolution: async (pId: string, content: string, file?: File, details?: any) => {
+        if (!user) return;
+        let attachmentUrl = null;
+        if (file) {
+            const path = `solutions/${pId}/${user.id}/${Date.now()}_${file.name}`;
+            await supabase.storage.from('solutions').upload(path, file);
+            attachmentUrl = supabase.storage.from('solutions').getPublicUrl(path).data.publicUrl;
         }
-      } catch (err) {
-        console.warn(`Solution cleanup node ${id} detached but sub-collections persisted:`, err);
-      }
-    }
-  };
+        await db.collection("problems").doc(pId).collection("solutions").add({ 
+            problemId: pId, studentId: user.id, studentName: user.name, 
+            content, submittedAt: new Date().toISOString(), reviewStatus: 'PENDING', attachmentUrl, ...details 
+        });
+    },
+    acceptSolution: async (pId: string, sId: string, stId: string, r: number, f: string) => {
+        await db.runTransaction(async (transaction) => {
+            transaction.update(db.collection("problems").doc(pId).collection("solutions").doc(sId), { isAccepted: true, rating: r, feedback: f });
+            transaction.update(db.collection("problems").doc(pId), { status: 'CLOSED' });
+        });
+    },
+    verifySimulationSolution,
+    editProblem: async (id: string, d: any) => { await db.collection("problems").doc(id).update(d); },
+    manualCloseProblem: async (id: string) => { await db.collection("problems").doc(id).update({ status: 'CLOSED' }); },
+    updateUserProfile: async (d: any) => { if(user) await db.collection("users").doc(user.id).update(d); },
+    adminBanUser: async (id: string, s: boolean) => { await db.collection("users").doc(id).update({ isBanned: !s }); },
+    adminVerifyUser: async (id: string) => { await db.collection("users").doc(id).update({ isVerified: true }); },
+    adminDeleteUser: async (id: string) => { await db.collection("users").doc(id).delete(); },
+    adminDeleteProblem: async (id: string) => { await db.collection("problems").doc(id).delete(); },
+    bulkDeleteProblems,
+    updateSiteConfig: async (c: any) => { await db.collection("settings").doc("global").set(c, { merge: true }); },
+    fetchSingleUser: async (id: string) => { const doc = await db.collection("users").doc(id).get(); return doc.exists ? { id: doc.id, ...doc.data() } as User : null; },
+    fetchUserByUsername: async (u: string) => { const snap = await db.collection("users").where("username", "==", u).limit(1).get(); return !snap.empty ? { id: snap.docs[0].id, ...snap.docs[0].data() } as User : null; },
+    clearAuditNotification: async () => { if(user) await db.collection("users").doc(user.id).update({ auditNotification: null }); }
+  }), [user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, bulkAddProblems, bulkDeleteProblems, verifySimulationSolution]);
 
-  const updateSiteConfig = async (c: Partial<SiteConfig>) => { await db.collection("settings").doc("global").set(c, { merge: true }); };
-  const editProblem = async (id: string, d: any) => { await db.collection("problems").doc(id).update(d); };
-  const manualCloseProblem = async (id: string) => { await db.collection("problems").doc(id).update({ status: 'CLOSED' }); };
-
-  return (
-    <AppContext.Provider value={{ user, loading, allUsers, problems, payments, siteConfig, login, register, logout, resetPassword, addProblem, bulkAddProblems, addSolution, acceptSolution, verifySimulationSolution, editProblem, manualCloseProblem, updateUserProfile, adminBanUser, adminVerifyUser, adminDeleteUser, adminDeleteProblem, bulkDeleteProblems, updateSiteConfig, fetchSingleUser, fetchUserByUsername, clearAuditNotification }}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
 export const useStore = () => {
   const context = useContext(AppContext);
-  if (!context) throw new Error("useStore error");
+  if (!context) throw new Error("useStore must be used within AppProvider");
   return context;
 };
