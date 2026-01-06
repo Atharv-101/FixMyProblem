@@ -57,14 +57,15 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
   const handleBulkDelete = async () => {
     if (selectedProblemIds.length === 0) return;
     const count = selectedProblemIds.length;
-    if (confirm(`CRITICAL: Permanent extraction of ${count} nodes initiated. This cannot be reverted. Proceed?`)) {
+    if (confirm(`CRITICAL: Permanent wipe of ${count} grid nodes. This operation is non-reversible. Execute extraction?`)) {
         setIsBulkDeleting(true);
         try {
             await bulkDeleteProblems(selectedProblemIds);
             setSelectedProblemIds([]);
-            alert(`SUCCESS: ${count} nodes extracted from grid.`);
+            alert(`SUCCESS: ${count} nodes extracted from grid. Background cleanup of solutions initiated.`);
         } catch (e) {
-            alert("Node extraction protocol failure.");
+            console.error("Wipe Protocol Failure:", e);
+            alert("Extraction failure. Check console for RPC details.");
         } finally {
             setIsBulkDeleting(false);
         }
@@ -90,6 +91,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                      <Terminal className="w-4 h-4" /> System Oversight
                   </div>
                   <h1 className="text-5xl md:text-7xl font-black mb-2 tracking-tighter leading-none">Admin <span className="text-citrus italic">Console.</span></h1>
+                  <p className="text-gray-400 font-bold uppercase tracking-[0.2em] mt-4">Infrastructure & Audit Control 👀</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
@@ -136,13 +138,15 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
         )}
 
         {activeTab === 'CONTENT' && (
-            <div className="tactile-card bg-white rounded-[2.5rem] overflow-hidden reveal mb-20 border-2 border-black">
+            <div className="tactile-card bg-white rounded-[2.5rem] overflow-hidden reveal mb-20 border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                     <thead className="bg-gray-50 text-[10px] uppercase text-gray-400 font-black tracking-widest border-b-2 border-black/5">
                         <tr>
                         <th className="p-6 w-12">
-                            <button onClick={toggleSelectAll}>{selectedProblemIds.length === problems.length ? <CheckSquare className="w-5 h-5 text-forest" /> : <Square className="w-5 h-5" />}</button>
+                            <button onClick={toggleSelectAll} className="hover:text-black transition-colors">
+                                {selectedProblemIds.length === problems.length ? <CheckSquare className="w-5 h-5 text-forest" /> : <Square className="w-5 h-5" />}
+                            </button>
                         </th>
                         <th className="p-6">Title</th>
                         <th className="p-6">Type</th>
@@ -153,13 +157,21 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                     <tbody className="divide-y-2 divide-gray-50">
                         {problems.map(p => (
                         <tr key={p.id} className={`hover:bg-gray-50 group transition-colors ${selectedProblemIds.includes(p.id) ? 'bg-citrus/5' : ''}`}>
-                            <td className="p-6"><button onClick={() => toggleSelection(p.id)}>{selectedProblemIds.includes(p.id) ? <CheckSquare className="w-5 h-5 text-forest" /> : <Square className="w-5 h-5 text-gray-200" />}</button></td>
-                            <td className="p-6 font-bold text-black max-w-xs truncate">{p.title}</td>
-                            <td className="p-6"><span className="px-2 py-1 bg-gray-100 rounded text-[8px] font-black uppercase">{p.isSimulation ? 'SIM' : 'REAL'}</span></td>
-                            <td className="p-6 font-black text-[9px] uppercase">{p.difficulty || 'MEDIUM'}</td>
+                            <td className="p-6">
+                                <button onClick={() => toggleSelection(p.id)} className="transition-all hover:scale-110">
+                                    {selectedProblemIds.includes(p.id) ? <CheckSquare className="w-5 h-5 text-forest" /> : <Square className="w-5 h-5 text-gray-200" />}
+                                </button>
+                            </td>
+                            <td className="p-6 font-bold text-black max-w-xs truncate text-lg group-hover:text-coral transition-colors">{p.title}</td>
+                            <td className="p-6">
+                                <span className={`px-2 py-1 rounded text-[8px] font-black uppercase border border-black/10 ${p.isSimulation ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                                    {p.isSimulation ? 'SIM' : 'REAL'}
+                                </span>
+                            </td>
+                            <td className="p-6 font-black text-[9px] uppercase tracking-widest">{p.difficulty || 'MEDIUM'}</td>
                             <td className="p-6 flex gap-2">
-                                <button onClick={() => { setCurrentProblemForDetails(p); setShowProblemDetailModal(true); }} className="p-2 hover:bg-citrus rounded-lg transition-colors"><Eye className="w-4 h-4"/></button>
-                                <button onClick={() => adminDeleteProblem(p.id)} className="p-2 hover:bg-coral hover:text-white rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                                <button onClick={() => { setCurrentProblemForDetails(p); setShowProblemDetailModal(true); }} className="p-2.5 bg-paper border-2 border-black rounded-lg hover:bg-citrus transition-all"><Eye className="w-4 h-4"/></button>
+                                <button onClick={() => adminDeleteProblem(p.id)} className="p-2.5 bg-white border-2 border-black rounded-lg text-coral hover:bg-black transition-all"><Trash2 className="w-4 h-4"/></button>
                             </td>
                         </tr>
                         ))}
@@ -181,7 +193,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ onProfileClick }) => {
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={() => setSelectedProblemIds([])} className="px-6 py-3 bg-black/20 hover:bg-black/30 rounded-xl font-black text-[10px] uppercase tracking-widest">Cancel</button>
+                        <button onClick={() => setSelectedProblemIds([])} className="px-6 py-3 bg-black/20 hover:bg-black/30 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors">Cancel</button>
                         <button onClick={handleBulkDelete} disabled={isBulkDeleting} className="px-8 py-3 bg-white text-coral rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                             {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash className="w-4 h-4" /> Wipe Nodes</>}
                         </button>
