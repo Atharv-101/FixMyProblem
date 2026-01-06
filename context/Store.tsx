@@ -52,6 +52,7 @@ const BADGE_RULES: Badge[] = [
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [internalAuthUser, setInternalAuthUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -69,37 +70,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => unsub();
   }, []);
 
-  // Auth State Listener - Resolves loading immediately
+  // Primary Auth State Bridge
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((firebaseUser) => {
+      setInternalAuthUser(firebaseUser);
       if (!firebaseUser) {
         setUser(null);
-        if (profileUnsubscribe.current) {
-          profileUnsubscribe.current();
-          profileUnsubscribe.current = null;
-        }
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribeAuth();
   }, []);
 
-  // User Profile Sync - Dedicated effect for performance and stability
+  // Reactive User Profile Sync - Responds instantly to internalAuthUser changes
   useEffect(() => {
-    const firebaseUser = auth.currentUser;
-    if (firebaseUser && firebaseUser.emailVerified) {
-      profileUnsubscribe.current = db.collection("users").doc(firebaseUser.uid).onSnapshot((snap) => {
+    if (profileUnsubscribe.current) {
+      profileUnsubscribe.current();
+      profileUnsubscribe.current = null;
+    }
+
+    if (internalAuthUser && internalAuthUser.emailVerified) {
+      profileUnsubscribe.current = db.collection("users").doc(internalAuthUser.uid).onSnapshot((snap) => {
         if (snap.exists) {
-          const userData = { id: firebaseUser.uid, ...snap.data() } as User;
+          const userData = { id: internalAuthUser.uid, ...snap.data() } as User;
           if (!userData.isBanned) setUser(userData);
           else auth.signOut();
         }
-      }, (error) => console.error("Profile sync error:", error.message));
+        setLoading(false);
+      }, (error) => {
+        console.error("Profile sync error:", error.message);
+        setLoading(false);
+      });
+    } else if (internalAuthUser && !internalAuthUser.emailVerified) {
+        // User logged in but not verified
+        setLoading(false);
     }
+
     return () => {
       if (profileUnsubscribe.current) profileUnsubscribe.current();
     };
-  }, [auth.currentUser?.uid, auth.currentUser?.emailVerified]);
+  }, [internalAuthUser]);
 
   // Users List Sync
   useEffect(() => {
@@ -110,13 +120,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => unsub();
   }, [user?.id]);
 
-  // Problems Feed & Solutions Sub-collections Sync
+  // Problems Feed & Solutions Sync
   useEffect(() => {
     const unsub = db.collection("problems").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
         const problemsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), solutions: [] })) as Problem[];
         setProblems(problemsData);
         
-        if (auth.currentUser) {
+        if (internalAuthUser) {
           problemsData.forEach(p => {
             if (!solutionUnsubscribes.current[p.id]) {
               solutionUnsubscribes.current[p.id] = db.collection("problems").doc(p.id).collection("solutions").onSnapshot((s) => {
@@ -125,17 +135,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
           });
         }
-      }, (error) => {
-          console.warn("Problems restricted:", error.message);
-          setProblems([]);
-      });
+      }, (error) => setProblems([]));
 
     return () => {
       unsub();
       Object.values(solutionUnsubscribes.current).forEach((un: any) => un());
       solutionUnsubscribes.current = {};
     };
-  }, [user?.id]);
+  }, [internalAuthUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     await auth.signInWithEmailAndPassword(email, password);
@@ -146,32 +153,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     solutionUnsubscribes.current = {};
     if (profileUnsubscribe.current) profileUnsubscribe.current();
     setUser(null);
+    setInternalAuthUser(null);
     await auth.signOut();
   }, []);
-
-  const bulkDeleteProblems = useCallback(async (ids: string[]) => {
-    if (!user || user.role !== UserRole.ADMIN || ids.length === 0) return;
-    
-    // Batch deletion for parent nodes (Atomic & Fast)
-    const mainBatch = db.batch();
-    ids.forEach(id => mainBatch.delete(db.collection("problems").doc(id)));
-    await mainBatch.commit();
-
-    // Background Cleanup: Solution Sub-collections
-    // This is run in parallel-sequence to avoid blocking the main UI thread
-    for (const id of ids) {
-      try {
-        const solSnap = await db.collection("problems").doc(id).collection("solutions").get();
-        if (!solSnap.empty) {
-          const subBatch = db.batch();
-          solSnap.docs.forEach(doc => subBatch.delete(doc.ref));
-          await subBatch.commit();
-        }
-      } catch (err) {
-        console.warn(`Node ${id} sub-collections skipped during wipe:`, err);
-      }
-    }
-  }, [user]);
 
   const verifySimulationSolution = useCallback(async (pId: string, sId: string, stId: string, rating: number, feedback: string, status: 'VERIFIED' | 'REJECTED') => {
     if (!user || (user.role !== UserRole.MENTOR && user.role !== UserRole.ADMIN)) return;
@@ -204,24 +188,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [user]);
 
+  const bulkDeleteProblems = useCallback(async (ids: string[]) => {
+    if (!user || user.role !== UserRole.ADMIN || ids.length === 0) return;
+    const mainBatch = db.batch();
+    ids.forEach(id => mainBatch.delete(db.collection("problems").doc(id)));
+    await mainBatch.commit();
+    for (const id of ids) {
+      try {
+        const solSnap = await db.collection("problems").doc(id).collection("solutions").get();
+        if (!solSnap.empty) {
+          const subBatch = db.batch();
+          solSnap.docs.forEach(doc => subBatch.delete(doc.ref));
+          await subBatch.commit();
+        }
+      } catch (err) { console.warn(`Node ${id} sub-collections skipped:`, err); }
+    }
+  }, [user]);
+
   const contextValue = useMemo(() => ({
     user, loading, allUsers, problems, payments, siteConfig,
     login, register: async (email: string, password: string, role: UserRole, name: string, extraInfo: string) => {
       const userCredential = await auth.createUserWithEmailAndPassword(email, password);
       const uid = userCredential.user!.uid;
       const username = name.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 1000);
-      const isVerifiedInitially = role !== UserRole.COMPANY;
-
       const newUser: any = { 
-        id: uid, username, email, name, role, isVerified: isVerifiedInitially,
+        id: uid, username, email, name, role, isVerified: role !== UserRole.COMPANY,
         rating: 0, leaderboardScore: 0, penaltyPoints: 0, solvedCount: 0, 
         simSolvedCount: 0, skillLevel: 'Beginner', badges: [], reviews: [], 
         joinedAt: new Date().toISOString(), bio: '', skills: []
       };
-
       if (role === UserRole.STUDENT) newUser.university = extraInfo || "";
       else if (role === UserRole.COMPANY) newUser.companyName = extraInfo || "";
-
       await db.collection("users").doc(uid).set(newUser);
       await userCredential.user!.sendEmailVerification();
       await auth.signOut();

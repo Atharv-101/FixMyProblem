@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole } from '../types.ts';
-import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Zap, Terminal, Shield, Lock, Cpu, ArrowRight, Sparkles, XCircle, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Zap, Terminal, Shield, Lock, Cpu, ArrowRight, Sparkles, XCircle, RefreshCw, Mail } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
+import { auth } from '../services/firebase.ts';
 
 interface AuthPageProps {
   initialRole?: UserRole;
@@ -23,6 +24,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [message, setMessage] = useState('');
+  const [showVerificationAlert, setShowVerificationAlert] = useState(false);
 
   const humanizeError = (rawError: string) => {
     const err = rawError.toLowerCase();
@@ -45,6 +47,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
     e.preventDefault();
     setError('');
     setMessage('');
+    setShowVerificationAlert(false);
     setLoading(true);
 
     try {
@@ -57,6 +60,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
 
       if (isLogin) {
         await login(email, password);
+        
+        // Post-login check for verification
+        const currentUser = auth.currentUser;
+        if (currentUser && !currentUser.emailVerified) {
+            setShowVerificationAlert(true);
+            await auth.signOut(); // Keep them on the auth page if not verified
+        }
       } else {
         if (role === UserRole.STUDENT) {
             const eduRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(edu|ac\.[a-z]{2}|edu\.in)$/;
@@ -65,7 +75,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
         if (role === UserRole.ADMIN && extraInfo !== 'admin2024') throw new Error("Invalid Root Key.");
 
         await register(email, password, role, name, extraInfo);
-        setMessage(`Verification sent to ${email}. Authenticate to proceed.`);
+        setMessage(`Verification link deployed to ${email}. Check your inbox.`);
         setIsLogin(true);
       }
     } catch (err: any) {
@@ -114,6 +124,17 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
           {message && (
              <div className="bg-forest text-white p-4 rounded-xl mb-8 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(253,224,71,1)] flex items-center animate-fade-in">
                 <CheckCircle2 className="w-4 h-4 mr-3 flex-shrink-0" /> {message}
+             </div>
+          )}
+
+          {showVerificationAlert && (
+             <div className="bg-citrus/20 text-black p-4 rounded-xl mb-8 border-2 border-black flex flex-col gap-2 animate-pop">
+                <div className="flex items-center text-[10px] font-black uppercase tracking-widest">
+                    <Mail className="w-4 h-4 mr-3 flex-shrink-0" /> Authorization Pending.
+                </div>
+                <p className="text-[10px] font-bold text-gray-600 leading-relaxed uppercase">
+                    Your digital mail node is not yet verified. Please click the link sent to your inbox to unlock the grid. 😁
+                </p>
              </div>
           )}
 
@@ -193,7 +214,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
               <div className="text-center mt-8 pt-8 border-t-2 border-gray-100">
                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                     {isLogin ? "No identity found?" : "Already synced?"}
-                    <button onClick={() => { setIsLogin(!isLogin); setError(''); setMessage(''); }} className="text-coral ml-2 hover:underline decoration-2 transition-all">
+                    <button onClick={() => { setIsLogin(!isLogin); setError(''); setMessage(''); setShowVerificationAlert(false); }} className="text-coral ml-2 hover:underline decoration-2 transition-all">
                        {isLogin ? "Generate New" : "Switch to Login"}
                     </button>
                  </p>
