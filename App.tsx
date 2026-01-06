@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { AppProvider, useStore } from './context/Store.tsx';
 import { UserRole } from './types.ts';
 import { Loader2, Zap, X, ShieldCheck, XCircle, Terminal, Sparkles } from 'lucide-react';
@@ -7,25 +7,35 @@ import { Loader2, Zap, X, ShieldCheck, XCircle, Terminal, Sparkles } from 'lucid
 import Navbar from './components/Navbar.tsx';
 import ScrollToTopButton from './components/ScrollToTopButton.tsx';
 import CustomCursor from './components/CustomCursor.tsx';
-import Modal from './components/Modal.tsx';
 
-import LandingPage from './pages/LandingPage.tsx';
-import AuthPage from './pages/AuthPage.tsx';
-import AdminPortal from './pages/AdminPortal.tsx';
-import StudentPortal from './pages/StudentPortal.tsx';
-import CompanyPortal from './pages/CompanyPortal.tsx';
-import MentorPortal from './pages/MentorPortal.tsx';
-import SimulationHub from './pages/SimulationHub.tsx';
-import LegalPage from './pages/LegalPage.tsx';
-import ContactPage from './pages/ContactPage.tsx';
-import Leaderboard from './pages/Leaderboard.tsx';
-import PaymentHistory from './pages/PaymentHistory.tsx';
-import ProfileDossier from './pages/ProfileDossier.tsx';
-import Error404 from './pages/Error404.tsx';
-import GenericInfoPage from './pages/GenericInfoPage.tsx';
-import UsersDirectory from './pages/UsersDirectory.tsx';
+// Lazy Loaded Pages
+const LandingPage = lazy(() => import('./pages/LandingPage.tsx'));
+const AuthPage = lazy(() => import('./pages/AuthPage.tsx'));
+const AdminPortal = lazy(() => import('./pages/AdminPortal.tsx'));
+const StudentPortal = lazy(() => import('./pages/StudentPortal.tsx'));
+const CompanyPortal = lazy(() => import('./pages/CompanyPortal.tsx'));
+const MentorPortal = lazy(() => import('./pages/MentorPortal.tsx'));
+const SimulationHub = lazy(() => import('./pages/SimulationHub.tsx'));
+const LegalPage = lazy(() => import('./pages/LegalPage.tsx'));
+const ContactPage = lazy(() => import('./pages/ContactPage.tsx'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard.tsx'));
+const PaymentHistory = lazy(() => import('./pages/PaymentHistory.tsx'));
+const ProfileDossier = lazy(() => import('./pages/ProfileDossier.tsx'));
+const Error404 = lazy(() => import('./pages/Error404.tsx'));
+const GenericInfoPage = lazy(() => import('./pages/GenericInfoPage.tsx'));
+const UsersDirectory = lazy(() => import('./pages/UsersDirectory.tsx'));
 
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'GENERIC_PAGE' | 'SIMULATIONS' | 'USERS_DIRECTORY';
+
+const LoadingFallback = () => (
+  <div className="min-h-[60vh] flex flex-col items-center justify-center bg-paper animate-fade-in">
+    <div className="relative">
+      <Loader2 className="w-16 h-16 animate-spin text-coral" />
+      <Zap className="w-6 h-6 text-citrus absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 fill-citrus" />
+    </div>
+    <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Synchronizing Grid Assets...</p>
+  </div>
+);
 
 const AuditNotificationPopup: React.FC = () => {
   const { user, clearAuditNotification } = useStore();
@@ -80,19 +90,6 @@ const FixMyProblemApp: React.FC = () => {
   const [authRole, setAuthRole] = useState<UserRole>(UserRole.STUDENT);
   const [targetProfileId, setTargetProfileId] = useState<string | null>(null);
   const [activePageData, setActivePageData] = useState<{ title: string; category: string; description?: string } | null>(null);
-
-  useEffect(() => {
-    const handleUrl = () => {
-        const path = window.location.pathname;
-        if (path.startsWith('/u/')) {
-            const username = path.split('/u/')[1];
-            if (username) { }
-        }
-    };
-    handleUrl();
-    window.addEventListener('popstate', handleUrl);
-    return () => window.removeEventListener('popstate', handleUrl);
-  }, []);
 
   useEffect(() => {
     if (user && view === 'AUTH') setView('DASHBOARD');
@@ -164,7 +161,9 @@ const FixMyProblemApp: React.FC = () => {
       <AuditNotificationPopup />
       {showGlobalNav && <Navbar onViewChange={navigateTo} transparent={view === 'HOME'} onProfileClick={handleOpenProfile} />}
       <main className="w-full flex-grow">
-        {currentContent}
+        <Suspense fallback={<LoadingFallback />}>
+          {currentContent}
+        </Suspense>
       </main>
       <ScrollToTopButton />
     </div>

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole } from '../types.ts';
-import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Zap, Terminal, Shield, Lock, Cpu, ArrowRight, Sparkles, XCircle, RefreshCw, Mail } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Zap, Terminal, Shield, Lock, Cpu, ArrowRight, Sparkles, XCircle, RefreshCw, Mail, UserCheck } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import { auth } from '../services/firebase.ts';
 
@@ -72,7 +72,10 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
             const eduRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(edu|ac\.[a-z]{2}|edu\.in)$/;
             if (!eduRegex.test(email)) throw new Error("Solver requires .edu or .ac.xx credentials.");
         }
-        if (role === UserRole.ADMIN && extraInfo !== 'admin2024') throw new Error("Invalid Root Key.");
+        
+        // Root Key Validations
+        if (role === UserRole.ADMIN && extraInfo !== 'admin2024') throw new Error("Invalid Admin Root Key.");
+        if (role === UserRole.MENTOR && extraInfo !== 'mentor2024') throw new Error("Invalid Mentor Access Key.");
 
         await register(email, password, role, name, extraInfo);
         setMessage(`Verification link deployed to ${email}. Check your inbox.`);
@@ -88,7 +91,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-paper p-4 md:p-6 relative overflow-hidden">
-      {/* Dynamic Background Decoration */}
       <div className="absolute top-10 left-10 opacity-5 animate-float pointer-events-none select-none hidden lg:block z-0">
         <Cpu className="w-64 h-64" />
       </div>
@@ -140,20 +142,27 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
 
           <form className="space-y-6" onSubmit={handleSubmit}>
              {!isLogin && !isForgotPassword && (
-               <div className="grid grid-cols-2 gap-3 md:gap-4 mb-8">
+               <div className="grid grid-cols-3 gap-2 md:gap-3 mb-8">
                   <button 
                     type="button" 
                     onClick={() => setRole(UserRole.STUDENT)} 
-                    className={`py-4 text-[10px] font-black uppercase tracking-widest rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${role === UserRole.STUDENT ? 'bg-black text-white border-black shadow-[4px_4px_0px_0px_rgba(253,224,71,1)]' : 'bg-white text-gray-400 border-gray-100 hover:border-black hover:text-black'}`}
+                    className={`py-4 text-[9px] font-black uppercase tracking-widest rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${role === UserRole.STUDENT ? 'bg-black text-white border-black shadow-[3px_3px_0px_0px_rgba(253,224,71,1)]' : 'bg-white text-gray-400 border-gray-100 hover:border-black hover:text-black'}`}
                   >
                     <Zap className="w-4 h-4" /> Solver
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setRole(UserRole.COMPANY)} 
-                    className={`py-4 text-[10px] font-black uppercase tracking-widest rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${role === UserRole.COMPANY ? 'bg-black text-white border-black shadow-[4px_4px_0px_0px_rgba(253,224,71,1)]' : 'bg-white text-gray-400 border-gray-100 hover:border-black hover:text-black'}`}
+                    className={`py-4 text-[9px] font-black uppercase tracking-widest rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${role === UserRole.COMPANY ? 'bg-black text-white border-black shadow-[3px_3px_0px_0px_rgba(253,224,71,1)]' : 'bg-white text-gray-400 border-gray-100 hover:border-black hover:text-black'}`}
                   >
                     <Shield className="w-4 h-4" /> Company
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setRole(UserRole.MENTOR)} 
+                    className={`py-4 text-[9px] font-black uppercase tracking-widest rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${role === UserRole.MENTOR ? 'bg-black text-white border-black shadow-[3px_3px_0px_0px_rgba(253,224,71,1)]' : 'bg-white text-gray-400 border-gray-100 hover:border-black hover:text-black'}`}
+                  >
+                    <UserCheck className="w-4 h-4" /> Mentor
                   </button>
                </div>
              )}
@@ -167,9 +176,17 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
                    </div>
                    <div className="space-y-2">
                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
-                       {role === UserRole.STUDENT ? "Academic Institute" : "Entity Name"}
+                       {role === UserRole.STUDENT ? "Academic Institute" : (role === UserRole.MENTOR ? "Secret Access Key" : "Entity Name")}
                      </label>
-                     <input type="text" required placeholder={role === UserRole.STUDENT ? "IIT Kharagpur" : "CyberDyne Systems"} className="w-full bg-paper border-2 border-black rounded-xl px-5 py-4 text-black font-bold placeholder:text-gray-300 focus:bg-citrus/5 outline-none transition-all shadow-sm" value={extraInfo} onChange={e => setExtraInfo(e.target.value)} />
+                     <input 
+                        type="text" 
+                        required 
+                        placeholder={role === UserRole.STUDENT ? "IIT Kharagpur" : (role === UserRole.MENTOR ? "Enter Mentor Key" : "CyberDyne Systems")} 
+                        className="w-full bg-paper border-2 border-black rounded-xl px-5 py-4 text-black font-bold placeholder:text-gray-300 focus:bg-citrus/5 outline-none transition-all shadow-sm" 
+                        value={extraInfo} 
+                        onChange={e => setExtraInfo(e.target.value)} 
+                     />
+                     {role === UserRole.MENTOR && <p className="text-[8px] font-bold text-coral uppercase px-1 mt-1">* Requires authorized protocol key</p>}
                    </div>
                  </>
                )}
@@ -227,7 +244,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
         </div>
       </div>
 
-      {/* User-Friendly Error Modal */}
       <Modal 
         isOpen={isErrorModalOpen} 
         onClose={() => setIsErrorModalOpen(false)} 

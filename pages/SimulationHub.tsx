@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem } from '../types.ts';
-import { Code2, ArrowLeft, Zap, Terminal, Search, Award, Info, Lock, ArrowRight, BrainCircuit, ShieldCheck, Upload, FileArchive, X, Loader2, ArrowUpRight, Github, Cpu, AlertCircle } from 'lucide-react';
+import { Code2, ArrowLeft, Zap, Terminal, Search, Award, Info, Lock, ArrowRight, BrainCircuit, ShieldCheck, Upload, FileArchive, X, Loader2, ArrowUpRight, Github, Cpu, AlertCircle, Filter, Tag as TagIcon, BarChart } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
@@ -14,6 +14,8 @@ interface SimulationHubProps {
 const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
   const { problems, user, addSolution } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string>('All');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   
   // Submission State
@@ -28,10 +30,26 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const simulationBase = useMemo(() => {
+    return problems.filter(p => p.isSimulation || p.companyName.toLowerCase().includes('practice'));
+  }, [problems]);
+
+  const allAvailableTags = useMemo(() => {
+    const tagsSet = new Set<string>();
+    simulationBase.forEach(p => p.tags.forEach(t => tagsSet.add(t)));
+    return ['All', ...Array.from(tagsSet).sort()];
+  }, [simulationBase]);
+
   const simulations = useMemo(() => {
-    return problems.filter(p => p.isSimulation || p.companyName.toLowerCase().includes('practice'))
-      .filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase())));
-  }, [problems, searchQuery]);
+    return simulationBase
+      .filter(p => {
+        const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesTag = selectedTag === 'All' || p.tags.includes(selectedTag);
+        const matchesDifficulty = selectedDifficulty === 'All' || p.difficulty === selectedDifficulty;
+        return matchesSearch && matchesTag && matchesDifficulty;
+      });
+  }, [simulationBase, searchQuery, selectedTag, selectedDifficulty]);
 
   const handleOpenTerminal = (p: Problem) => {
     setSelectedProblem(p);
@@ -125,15 +143,56 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
             </div>
         </div>
 
-        <div className="mb-12 relative group reveal">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 group-focus-within:text-forest transition-colors" />
-            <input 
-               type="text" 
-               placeholder="Filter simulations by tech (React, Rust, Debugging)..." 
-               className="w-full pl-16 pr-8 py-6 rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-1 focus:translate-y-1 outline-none transition-all text-xl font-bold placeholder:text-gray-300" 
-               value={searchQuery} 
-               onChange={e => setSearchQuery(e.target.value)} 
-            />
+        {/* Search & Main Filters */}
+        <div className="space-y-8 reveal mb-16">
+            <div className="relative group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 group-focus-within:text-forest transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Filter simulations by tech (React, Rust, Debugging)..." 
+                  className="w-full pl-16 pr-8 py-6 rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-1 focus:translate-y-1 outline-none transition-all text-xl font-bold placeholder:text-gray-300 bg-white" 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                />
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-8">
+                {/* Difficulty Filter */}
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">
+                        <BarChart className="w-3.5 h-3.5" /> Sorting Sequence: Difficulty
+                    </div>
+                    <div className="flex bg-white p-2 rounded-2xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-fit">
+                        {['All', 'EASY', 'MEDIUM', 'HARD'].map((diff) => (
+                            <button 
+                                key={diff}
+                                onClick={() => setSelectedDifficulty(diff)}
+                                className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${selectedDifficulty === diff ? 'bg-black text-white' : 'hover:bg-citrus/20'}`}
+                            >
+                                {diff}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Tag Cloud Filter */}
+                <div className="flex flex-col gap-3 flex-1 overflow-hidden">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">
+                        <TagIcon className="w-3.5 h-3.5" /> Node Cluster: Tags
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar no-scrollbar-on-mobile">
+                        {allAvailableTags.map((tag) => (
+                            <button 
+                                key={tag}
+                                onClick={() => setSelectedTag(tag)}
+                                className={`px-6 py-3 rounded-2xl border-4 border-black font-black text-xs uppercase tracking-widest whitespace-nowrap transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none ${selectedTag === tag ? 'bg-forest text-citrus' : 'bg-white text-black'}`}
+                            >
+                                {tag}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 reveal">
@@ -141,7 +200,7 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
                 <div 
                     key={p.id} 
                     onClick={() => handleOpenTerminal(p)}
-                    className="tactile-card p-10 rounded-[3rem] bg-white cursor-pointer group flex flex-col h-full hover:bg-paper transition-all"
+                    className="tactile-card p-10 rounded-[3rem] bg-white cursor-pointer group flex flex-col h-full hover:bg-paper transition-all relative overflow-hidden"
                 >
                     <div className="sticker-tape opacity-20"></div>
                     <div className="flex justify-between items-start mb-8">
@@ -162,6 +221,7 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
                                 {tag}
                             </span>
                         ))}
+                        {p.tags.length > 3 && <span className="text-[9px] font-black uppercase text-gray-300">+{p.tags.length - 3}</span>}
                     </div>
 
                     <button className="tactile-btn w-full py-5 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 group-hover:bg-forest">
@@ -175,7 +235,7 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
             <div className="text-center py-32 tactile-card border-dashed bg-white/50 rounded-[3rem]">
                 <BrainCircuit className="w-20 h-20 text-gray-200 mx-auto mb-8 animate-pulse" />
                 <p className="text-gray-400 text-2xl font-black uppercase tracking-[0.2em]">Awaiting Simulation Data...</p>
-                <button onClick={() => setSearchQuery('')} className="mt-8 text-forest font-black underline decoration-citrus decoration-4 underline-offset-8 text-lg">Reset Simulation Filter</button>
+                <button onClick={() => { setSearchQuery(''); setSelectedTag('All'); setSelectedDifficulty('All'); }} className="mt-8 text-forest font-black underline decoration-citrus decoration-4 underline-offset-8 text-lg">Reset All Grid Filters</button>
             </div>
         )}
 
@@ -188,7 +248,7 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
                 </p>
                 <div className="flex items-center gap-6">
                     <div className="flex -space-x-4">
-                        {[1,2,3,4].map(i => <img key={i} src={`https://i.pravatar.cc/100?u=s${i}`} className="w-14 h-14 rounded-2xl border-4 border-black bg-white" />)}
+                        {[1,2,3,4].map(i => <img key={i} src={`https://i.pravatar.cc/100?u=s${i}`} className="w-14 h-14 rounded-2xl border-4 border-black bg-white" alt={`Active Solver ${i}`} />)}
                     </div>
                     <span className="text-sm font-black uppercase tracking-widest text-citrus">892 Active Solvers Right Now</span>
                 </div>
