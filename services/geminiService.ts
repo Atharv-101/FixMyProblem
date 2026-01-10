@@ -5,13 +5,14 @@ import { GoogleGenAI, Type } from "@google/genai";
  * Service to handle AI-powered features using the Google Gemini API.
  */
 
+// Use gemini-3-pro-preview for coding tasks (evaluation) as per guidelines.
 export const evaluateSolutionWithAI = async (problemDescription: string, solutionContent: string) => {
   if (!process.env.API_KEY) return null;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: `Evaluate the following student code/explanation for a technical simulation.
       Problem Context: ${problemDescription}
       Student Solution: ${solutionContent}
@@ -36,6 +37,7 @@ export const evaluateSolutionWithAI = async (problemDescription: string, solutio
       }
     });
 
+    // Extracting text output from GenerateContentResponse via .text property.
     return JSON.parse(response.text || "{}");
   } catch (error) {
     console.error("AI Evaluation failed:", error);

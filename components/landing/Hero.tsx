@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Terminal, MoveRight, Star, Zap, Activity, IndianRupee, ArrowRight, Users, Building2, Globe } from 'lucide-react';
+import { Terminal, MoveRight, Star, Zap, Activity, IndianRupee, ArrowRight, Users, Building2, Globe, LayoutDashboard, Sparkles } from 'lucide-react';
 import { UserRole } from '../../types.ts';
 import { getLiveInsights } from '../../services/geminiService.ts';
+import { useStore } from '../../context/Store.tsx';
 
 interface HeroProps {
   onLoginClick: (role: UserRole) => void;
@@ -10,6 +11,7 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
+  const { user } = useStore();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [liveInsights, setLiveInsights] = useState<string[]>([]);
 
@@ -30,9 +32,12 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  const handleDashboardRedirect = () => {
+    window.dispatchEvent(new CustomEvent('nav-change', { detail: 'DASHBOARD' }));
+  };
+
   return (
     <section className="relative min-h-[90vh] lg:min-h-screen pt-40 md:pt-44 pb-16 px-4 md:px-10 overflow-hidden flex items-center bg-transparent">
-      {/* Background decoration */}
       <div 
         className="absolute top-1/4 left-1/4 w-[200px] sm:w-[500px] h-[200px] sm:h-[500px] bg-coral/5 rounded-full blur-[100px] pointer-events-none transition-transform duration-1000 ease-out hidden sm:block"
         style={{ transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0)` }}
@@ -40,7 +45,6 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
       
       <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
         
-        {/* Left Content */}
         <div className="relative text-center lg:text-left space-y-6 sm:space-y-10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-[3px_3px_0px_0px_rgba(253,224,71,1)]">
              <Zap className="w-3 h-3 text-citrus fill-citrus animate-pulse" />
@@ -65,18 +69,29 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 sm:gap-6 pt-4">
-            <button 
-              onClick={() => onLoginClick(UserRole.COMPANY)}
-              className="tactile-btn px-8 sm:px-10 py-5 bg-coral text-white rounded-2xl font-black text-lg sm:text-xl flex items-center justify-center group"
-            >
-              Hire Solvers <MoveRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform" />
-            </button>
-            <button 
-              onClick={() => onLoginClick(UserRole.STUDENT)}
-              className="tactile-btn px-8 sm:px-10 py-5 bg-white text-black border-2 border-black rounded-2xl font-black text-lg sm:text-xl hover:bg-citrus transition-colors"
-            >
-              Solve & Earn
-            </button>
+            {user ? (
+              <button 
+                onClick={handleDashboardRedirect}
+                className="tactile-btn px-10 py-6 bg-black text-white rounded-2xl font-black text-2xl flex items-center justify-center group shadow-[8px_8px_0px_0px_rgba(253,224,71,1)] hover:bg-forest transition-all"
+              >
+                Go to Dashboard <LayoutDashboard className="ml-4 w-7 h-7 text-citrus group-hover:rotate-12 transition-transform" />
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={() => onLoginClick(UserRole.COMPANY)}
+                  className="tactile-btn px-8 sm:px-10 py-5 bg-coral text-white rounded-2xl font-black text-lg sm:text-xl flex items-center justify-center group"
+                >
+                  Hire Solvers <MoveRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                </button>
+                <button 
+                  onClick={() => onLoginClick(UserRole.STUDENT)}
+                  className="tactile-btn px-8 sm:px-10 py-5 bg-white text-black border-2 border-black rounded-2xl font-black text-lg sm:text-xl hover:bg-citrus transition-colors"
+                >
+                  Solve & Earn
+                </button>
+              </>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-4">
@@ -98,13 +113,11 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
           </div>
         </div>
 
-        {/* Right Content - REFINED METRICS CARD */}
         <div className="relative w-full flex items-center justify-center group h-auto">
           <div 
             className="relative w-full max-w-sm sm:max-w-md transition-transform duration-700 ease-out"
             style={{ transform: `translate3d(${mousePos.x * 0.3}px, ${mousePos.y * 0.3}px, 0)` }}
           >
-            {/* Grid Metrics Card - Fixed Whitespace */}
             <div className="tactile-card rounded-[2.5rem] rotate-[-2deg] z-30 animate-float bg-white p-6 sm:p-10 flex flex-col min-h-[400px] justify-between">
                <div className="sticker-tape opacity-30"></div>
                
@@ -116,7 +129,6 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
                </div>
                
                <div className="space-y-4 sm:space-y-6 flex-grow">
-                  {/* Metric 1 */}
                   <div className="flex items-center gap-4 sm:gap-6 p-4 sm:p-5 bg-paper rounded-2xl border-2 border-black/5 hover:border-citrus transition-colors group/item">
                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-citrus rounded-2xl flex items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shrink-0 group-hover/item:rotate-6 transition-transform">
                         <Users className="w-7 h-7 sm:w-8 sm:h-8 text-black" />
@@ -127,7 +139,6 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
                      </div>
                   </div>
 
-                  {/* Metric 2 */}
                   <div className="flex items-center gap-4 sm:gap-6 p-4 sm:p-5 bg-paper rounded-2xl border-2 border-black/5 hover:border-forest/20 transition-colors group/item">
                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-forest rounded-2xl flex items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shrink-0 group-hover/item:-rotate-6 transition-transform">
                         <Building2 className="w-7 h-7 sm:w-8 sm:h-8 text-citrus" />
@@ -139,7 +150,6 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
                   </div>
                </div>
 
-               {/* Footer Status */}
                <div className="mt-8 pt-6 border-t border-black/5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -149,7 +159,6 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
                </div>
             </div>
 
-            {/* Floating Info Box - hidden on very small mobile */}
             <div className="absolute -bottom-6 -right-6 w-36 sm:w-52 bg-black text-citrus tactile-card p-4 sm:p-6 rounded-2xl rotate-[6deg] z-40 hidden md:block animate-float [animation-delay:2s]">
                <div className="font-mono text-[9px] sm:text-[10px] space-y-2">
                   <div className="flex items-center justify-between text-coral">
@@ -167,7 +176,6 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
         </div>
       </div>
 
-      {/* Ticker Section */}
       <div className="absolute bottom-0 left-0 w-full py-3 bg-black border-t-2 border-black overflow-hidden whitespace-nowrap z-20">
          <div className="inline-block animate-[scroll_50s_linear_infinite] uppercase text-[9px] sm:text-[10px] font-black tracking-[0.3em] text-white">
             {liveInsights.map((insight, i) => (
@@ -175,7 +183,6 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
                 <span className="text-citrus">Live Grid:</span> {insight} • 
               </span>
             ))}
-            {/* Duplicated for smooth loop */}
             {liveInsights.map((insight, i) => (
               <span key={`dup-${i}`} className="mx-8 sm:mx-12">
                 <span className="text-citrus">Live Grid:</span> {insight} • 

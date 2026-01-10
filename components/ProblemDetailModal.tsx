@@ -28,6 +28,9 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
   const isSimulation = problem.isSimulation || problem.companyName.toLowerCase().includes('practice');
   const isAuthenticated = !!user;
 
+  const isLocked = isSimulation && problem.lockedByStudentId && new Date(problem.lockExpiresAt!) > new Date();
+  const lockedByMe = isLocked && problem.lockedByStudentId === user?.id;
+
   const funnyAlerts = [
     "Hold up, rogue node! You're trying to access high-stakes intel without an active protocol? Authenticate before the system thinks you're a glitch. 👀🪄",
     "Access Denied! Your current identity is 'Ghost'. We don't hire ghosts, they're terrible at debugging. Log in to reveal the grid. 👻💻",
@@ -73,7 +76,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
           {!isAuthenticated && (
             <div className="absolute inset-0 z-40 flex items-center justify-center p-6 bg-white/10 backdrop-blur-md pointer-events-none select-none">
                 <div className="tactile-card bg-black text-white p-10 rounded-[3rem] max-w-lg text-center shadow-2xl pointer-events-auto border-4 border-citrus">
-                   <div className="w-20 h-20 bg-citrus text-black rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce shadow-[6px_6px_0px_0px_rgba(255,255,255,1)]">
+                   <div className="w-20 h-20 bg-citrus text-black rounded-full border-4 border-black flex items-center justify-center mx-auto mb-8 animate-bounce shadow-[6px_6px_0px_0px_rgba(255,255,255,1)]">
                       <Lock className="w-10 h-10" />
                    </div>
                    <h3 className="text-2xl font-black tracking-tighter mb-4 italic text-citrus">Identity Verification Required</h3>
@@ -114,7 +117,7 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                   </div>
                 </div>
                 <div className="p-4 bg-paper border-2 border-black rounded-2xl text-center">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Protocol</p>
+                  <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Protocol</p>
                   <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border-2 border-black ${problem.status === 'OPEN' ? 'bg-citrus' : 'bg-gray-200'}`}>
                     {problem.status}
                   </span>
@@ -229,20 +232,27 @@ const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ isOpen, onClose
                <div className="p-8 bg-citrus rounded-[2.5rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
                   {!isAuthenticated && <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px] z-10"></div>}
                   <h4 className="font-black text-xl mb-3 tracking-tighter relative z-20">
-                    {isAuthenticated ? (isSimulation ? 'Start Practice?' : 'Initialize Execution?') : 'Identity Locked'}
+                    {isAuthenticated ? (isSimulation ? (isLocked && !lockedByMe ? 'Node Occupied' : 'Start Practice?') : 'Initialize Execution?') : 'Identity Locked'}
                   </h4>
                   <p className="text-xs font-bold mb-8 opacity-70 leading-relaxed relative z-20">
                     {isAuthenticated 
-                      ? (isSimulation ? "Enter the sandbox environment to test your skills." : "Review the mission brief carefully. Deploy your code payload to the company grid for bounty extraction.") 
+                      ? (isSimulation ? (isLocked && !lockedByMe ? `Reserved by ${problem.lockedByStudentName} for next grid cycle.` : "Enter the sandbox environment to test your skills. Locking this node reserves it for 15 days.") : "Review the mission brief carefully. Deploy your code payload to the company grid for bounty extraction.") 
                       : "Unauthorized access detected. Please authenticate your node to view the full briefing and commit solutions."
                     } 😁
                   </p>
                   <button 
-                    onClick={() => onSolveClick?.(problem.id)}
-                    className={`tactile-btn w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 relative z-20 transition-all ${isAuthenticated ? 'bg-black text-white hover:bg-forest' : 'bg-gray-100 text-gray-400 border-2 border-black/10 shadow-none'}`}
+                    disabled={isLocked && !lockedByMe}
+                    onClick={() => {
+                        onSolveClick?.(problem.id);
+                    }}
+                    className={`tactile-btn w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 relative z-20 transition-all ${isAuthenticated && (!isLocked || lockedByMe) ? 'bg-black text-white hover:bg-forest' : 'bg-gray-100 text-gray-400 border-2 border-black/10 shadow-none cursor-not-allowed'}`}
                   >
                     {isAuthenticated ? (
-                      <><Terminal className="w-5 h-5" /> {isSimulation ? 'Commit Practice Solution' : 'Commit Solution'}</>
+                      isLocked && !lockedByMe ? (
+                        <><Lock className="w-5 h-5" /> Locked Node</>
+                      ) : (
+                        <><Terminal className="w-5 h-5" /> {isSimulation ? (lockedByMe ? 'Open Terminal' : 'Lock & Solve Problem') : 'Commit Solution'}</>
+                      )
                     ) : (
                       <><KeyRound className="w-5 h-5" /> Authentication Required</>
                     )}

@@ -9,6 +9,8 @@ export enum UserRole {
 
 export type SkillLevel = 'Beginner' | 'Junior' | 'Intermediate' | 'Advanced';
 
+export type VerificationStatus = 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
+
 export interface Badge {
   id: string;
   name: string;
@@ -47,7 +49,8 @@ export interface User {
   profilePicUrl?: string;
   skills?: string[];
   isBanned?: boolean;
-  isVerified?: boolean; // Manual Admin verification for Companies
+  isVerified?: boolean; // Legacy/Compat
+  verificationStatus?: VerificationStatus;
   joinedAt?: string;
   auditNotification?: {
     problemId: string;
@@ -121,6 +124,10 @@ export interface Problem {
   createdAt: string;
   tags: string[];
   solutions: Solution[];
+  // New lock fields for Practice problems
+  lockedByStudentId?: string;
+  lockedByStudentName?: string;
+  lockExpiresAt?: string; // ISO String
 }
 
 export interface Payment {

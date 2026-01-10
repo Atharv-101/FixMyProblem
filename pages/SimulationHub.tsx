@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem } from '../types.ts';
-import { Code2, ArrowLeft, Zap, Terminal, Search, Award, Info, Lock, ArrowRight, BrainCircuit, ShieldCheck, Upload, FileArchive, X, Loader2, ArrowUpRight, Github, Cpu, AlertCircle, Filter, Tag as TagIcon, BarChart } from 'lucide-react';
+import { Code2, ArrowLeft, Zap, Terminal, Search, Award, Info, Lock, ArrowRight, BrainCircuit, ShieldCheck, Upload, FileArchive, X, Loader2, ArrowUpRight, Github, Cpu, AlertCircle, Filter, Tag as TagIcon, BarChart, Clock, LogOut } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
@@ -12,7 +12,7 @@ interface SimulationHubProps {
 }
 
 const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
-  const { problems, user, addSolution } = useStore();
+  const { problems, user, addSolution, lockProblem, unlockProblem } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
@@ -55,11 +55,31 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
     setSelectedProblem(p);
   };
 
-  const handleStartSolve = (problemId: string) => {
+  const handleStartSolve = async (problemId: string) => {
     if (!user) {
         alert("Authentication required to access the terminal.");
         return;
     }
+
+    const target = simulationBase.find(p => p.id === problemId);
+    if (!target) return;
+
+    // Check if it's already locked by someone else
+    const isLockedByOthers = target.lockedByStudentId && target.lockedByStudentId !== user.id && new Date(target.lockExpiresAt!) > new Date();
+    if (isLockedByOthers) {
+        alert("This node is currently reserved by another solver.");
+        return;
+    }
+
+    // Auto-lock if not already locked by current user
+    if (target.lockedByStudentId !== user.id) {
+        try {
+            await lockProblem(problemId);
+        } catch (error) {
+            console.error("Lock Protocol Failed:", error);
+        }
+    }
+
     setSubmittingId(problemId);
     setSelectedProblem(null);
   };
@@ -104,7 +124,27 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
     }
   };
 
-  const activeSubmittingProb = simulations.find(p => p.id === submittingId);
+  const handleLockIn = async (pId: string) => {
+    if (!user) return;
+    if (window.confirm("Initialize 15-day Lock-In protocol? This problem will be reserved for your identity node.")) {
+        await lockProblem(pId);
+    }
+  };
+
+  const handleGiveUp = async (pId: string) => {
+    if (window.confirm("Terminate Lock-In sequence? The problem will be released back to the global grid.")) {
+        await unlockProblem(pId);
+    }
+  };
+
+  const checkIsLocked = (p: Problem) => {
+    if (!p.lockedByStudentId || !p.lockExpiresAt) return false;
+    const now = new Date();
+    const expiry = new Date(p.lockExpiresAt);
+    return expiry > now;
+  };
+
+  const activeSubmittingProb = simulationBase.find(p => p.id === submittingId);
 
   return (
     <div className="min-h-screen bg-paper pt-32 px-6 md:px-10 pb-20 overflow-hidden relative">
@@ -126,7 +166,7 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
                     Practice Hub.
                 </h1>
                 <p className="text-xl md:text-2xl font-bold text-gray-500 max-w-2xl">
-                    Hone your skills with industry-inspired simulations. No real money, only <span className="text-black">pure proof-of-work</span> and verified badges. 😁
+                    Hone your skills with industry-inspired simulations. Once locked, a node is yours for <span className="text-black">15 Grid Cycles.</span> 😁
                 </p>
             </div>
             
@@ -157,7 +197,6 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
             </div>
 
             <div className="flex flex-col md:flex-row gap-8">
-                {/* Difficulty Filter */}
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">
                         <BarChart className="w-3.5 h-3.5" /> Sorting Sequence: Difficulty
@@ -175,7 +214,6 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
                     </div>
                 </div>
 
-                {/* Tag Cloud Filter */}
                 <div className="flex flex-col gap-3 flex-1 overflow-hidden">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">
                         <TagIcon className="w-3.5 h-3.5" /> Node Cluster: Tags
@@ -196,16 +234,28 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 reveal">
-            {simulations.map((p, idx) => (
+            {simulations.map((p, idx) => {
+                const isLocked = checkIsLocked(p);
+                const lockedByMe = p.lockedByStudentId === user?.id;
+                const daysLeft = isLocked ? Math.ceil((new Date(p.lockExpiresAt!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
+                return (
                 <div 
                     key={p.id} 
                     onClick={() => handleOpenTerminal(p)}
-                    className="tactile-card p-10 rounded-[3rem] bg-white cursor-pointer group flex flex-col h-full hover:bg-paper transition-all relative overflow-hidden"
+                    className={`tactile-card p-10 rounded-[3rem] bg-white cursor-pointer group flex flex-col h-full hover:bg-paper transition-all relative overflow-hidden ${isLocked && !lockedByMe ? 'opacity-70 grayscale pointer-events-none' : ''}`}
                 >
                     <div className="sticker-tape opacity-20"></div>
                     <div className="flex justify-between items-start mb-8">
-                        <div className="px-4 py-1.5 bg-gray-50 border-2 border-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                           <ShieldCheck className="w-4 h-4 text-forest" /> Practice
+                        <div className="flex flex-col gap-2">
+                            <div className="px-4 py-1.5 bg-gray-50 border-2 border-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                               <ShieldCheck className="w-4 h-4 text-forest" /> Practice
+                            </div>
+                            {isLocked && (
+                                <div className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1.5 ${lockedByMe ? 'bg-forest text-citrus' : 'bg-coral text-white'}`}>
+                                    <Clock className="w-3 h-3" /> {lockedByMe ? `My Node (${daysLeft}d left)` : `Reserved by ${p.lockedByStudentName?.split(' ')[0]}`}
+                                </div>
+                            )}
                         </div>
                         <div className={`px-4 py-1.5 rounded-xl border-2 border-black text-[10px] font-black uppercase tracking-widest ${p.difficulty === 'HARD' ? 'bg-coral text-white' : p.difficulty === 'MEDIUM' ? 'bg-citrus text-black' : 'bg-forest text-white'}`}>
                             {p.difficulty || 'MEDIUM'}
@@ -221,14 +271,36 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
                                 {tag}
                             </span>
                         ))}
-                        {p.tags.length > 3 && <span className="text-[9px] font-black uppercase text-gray-300">+{p.tags.length - 3}</span>}
                     </div>
 
-                    <button className="tactile-btn w-full py-5 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 group-hover:bg-forest">
-                        Open Terminal <Terminal className="w-4 h-4" />
-                    </button>
+                    <div className="space-y-3">
+                        {lockedByMe ? (
+                            <>
+                                <button className="tactile-btn w-full py-5 bg-forest text-citrus rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                    Open Terminal <Terminal className="w-4 h-4" />
+                                </button>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleGiveUp(p.id); }}
+                                    className="w-full py-4 bg-white text-coral border-2 border-coral rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-coral hover:text-white transition-all flex items-center justify-center gap-2"
+                                >
+                                    <LogOut className="w-3.5 h-3.5" /> Give Up Protocol
+                                </button>
+                            </>
+                        ) : isLocked ? (
+                            <button disabled className="w-full py-5 bg-gray-100 text-gray-400 border-2 border-black/10 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                <Lock className="w-4 h-4" /> Node Occupied
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleLockIn(p.id); }}
+                                className="tactile-btn w-full py-5 bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                            >
+                                <Zap className="w-4 h-4 text-citrus" /> Lock & Start
+                            </button>
+                        )}
+                    </div>
                 </div>
-            ))}
+            )})}
         </div>
 
         {simulations.length === 0 && (
@@ -244,7 +316,7 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
             <div className="max-w-2xl relative z-10">
                 <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-6">Built for <span className="text-citrus">Solvers.</span></h2>
                 <p className="text-xl md:text-2xl font-bold text-gray-400 leading-relaxed mb-10">
-                    Once you submit a solution, a <span className="text-white">Mentor</span> will audit your code. Verified solves unlock specialized badges and boost your rank on the global grid. 😁
+                    The 15-day lock ensures you have enough time to deliver quality code without competition pressure. Commit wisely! 😁
                 </p>
                 <div className="flex items-center gap-6">
                     <div className="flex -space-x-4">

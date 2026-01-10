@@ -32,7 +32,7 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, onProfileClick, onPageNav }) => {
-  const { problems, allUsers } = useStore();
+  const { problems, allUsers, user } = useStore();
   const [scrolled, setScrolled] = useState(false);
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
@@ -40,8 +40,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    
+    // Global navigation listener for child sections
+    const handleGlobalNav = (e: any) => {
+        if (e.detail === 'DASHBOARD') {
+           onViewChange('DASHBOARD');
+        } else if (e.detail) {
+           onViewChange(e.detail);
+        }
+    };
+    window.addEventListener('nav-change', handleGlobalNav);
+
+    return () => {
+        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('nav-change', handleGlobalNav);
+    };
+  }, [onViewChange]);
 
   const stats = useMemo(() => {
     const totalUsers = allUsers.length;

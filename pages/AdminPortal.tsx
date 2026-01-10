@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { useStore } from '../context/Store.tsx';
-import { UserRole, Problem, User, Solution } from '../types.ts';
+import { UserRole, Problem, User, Solution, VerificationStatus } from '../types.ts';
 import { 
   Users, CheckCircle2, Star, Trophy, Loader2, Shield, Activity, 
   Terminal, Cpu, IndianRupee, Settings, Trash2, Ban, Plus, 
   Briefcase, Layers, Info, Tag, Wand2, AlertTriangle, BarChart3, 
   BrainCircuit, Layout, Zap, Edit2, Eye, XCircle, Download, FileArchive, ArrowUpRight, ShieldCheck, UserCheck, FileSpreadsheet, X, HelpCircle,
-  Square, CheckSquare, Trash
+  Square, CheckSquare, Trash, Building2, Check, X as XIcon
 } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
@@ -50,8 +50,8 @@ const ProblemRow = memo(({
 ));
 
 const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onProfileClick }) => {
-  const { allUsers, problems, adminDeleteProblem, bulkDeleteProblems, bulkAddProblems } = useStore();
-  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'USERS' | 'CONTENT' | 'SIMULATION_AUDITS' | 'SETTINGS'>('OVERVIEW');
+  const { allUsers, problems, adminDeleteProblem, bulkDeleteProblems, bulkAddProblems, adminUpdateCompanyStatus } = useStore();
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'USERS' | 'CONTENT' | 'COMPANY_AUDITS' | 'SETTINGS'>('OVERVIEW');
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -63,7 +63,7 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
 
   useEffect(() => {
     if (activeTab !== 'CONTENT') setSelectedProblemIds([]);
-    setVisibleCount(20); // Reset visible count on tab change
+    setVisibleCount(20); 
   }, [activeTab]);
 
   const stats = useMemo(() => {
@@ -74,9 +74,9 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
     return { totalUsers, onlineUsers, totalSimulations, totalBountyValue };
   }, [allUsers, problems]);
 
-  const pendingSimulationAudits = useMemo(() => {
-    return problems.flatMap(p => (p.solutions || []).filter(s => s.reviewStatus === 'PENDING').map(s => ({ problem: p, solution: s })));
-  }, [problems]);
+  const pendingCompanies = useMemo(() => {
+    return allUsers.filter(u => u.role === UserRole.COMPANY && (u.verificationStatus === 'PENDING_VERIFICATION' || !u.verificationStatus));
+  }, [allUsers]);
 
   const handleDownloadTemplate = () => {
     const headers = ["Title", "Description", "Bounty", "Difficulty", "Tags"];
@@ -117,6 +117,14 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
     }
   };
 
+  const handleCompanyVerification = async (userId: string, status: VerificationStatus) => {
+    try {
+        await adminUpdateCompanyStatus(userId, status);
+    } catch (err) {
+        alert("Verification update failed.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-transparent pt-32 px-4 pb-12 relative">
       <div className="max-w-7xl mx-auto">
@@ -141,9 +149,9 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
         </div>
 
         <div className="flex space-x-4 mb-10 overflow-x-auto pb-4">
-           {['OVERVIEW', 'USERS', 'CONTENT', 'SIMULATION_AUDITS', 'SETTINGS'].map((tab) => (
+           {['OVERVIEW', 'USERS', 'CONTENT', 'COMPANY_AUDITS', 'SETTINGS'].map((tab) => (
              <button key={tab} onClick={() => setActiveTab(tab as any)} className={`tactile-btn px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-black text-white' : 'bg-white text-black hover:bg-citrus'}`}>
-                {tab.replace('_', ' ')} {tab === 'SIMULATION_AUDITS' && pendingSimulationAudits.length > 0 && <span className="ml-2 bg-coral text-white px-2 py-0.5 rounded-full text-[8px]">{pendingSimulationAudits.length}</span>}
+                {tab.replace('_', ' ')} {tab === 'COMPANY_AUDITS' && pendingCompanies.length > 0 && <span className="ml-2 bg-coral text-white px-2 py-0.5 rounded-full text-[8px]">{pendingCompanies.length}</span>}
              </button>
            ))}
         </div>
@@ -203,6 +211,63 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
                 {visibleCount < problems.length && (
                     <div className="p-8 text-center bg-gray-50 border-t-2 border-black/5">
                         <button onClick={() => setVisibleCount(c => c + 30)} className="text-sm font-black uppercase text-coral hover:underline">Reveal More Nodes ({problems.length - visibleCount} hidden)</button>
+                    </div>
+                )}
+            </div>
+        )}
+
+        {activeTab === 'COMPANY_AUDITS' && (
+            <div className="space-y-6">
+                <h2 className="text-2xl font-black tracking-widest uppercase flex items-center gap-3">
+                    <Building2 className="w-8 h-8 text-coral" /> Pending Company Nodes
+                </h2>
+                
+                {pendingCompanies.length === 0 ? (
+                    <div className="p-20 text-center border-4 border-dashed border-black/10 rounded-[3rem] bg-white/50">
+                        <CheckCircle2 className="w-16 h-16 text-gray-200 mx-auto mb-6" />
+                        <p className="text-gray-400 font-black uppercase tracking-widest text-xl">No pending entities for verification.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-6">
+                        {pendingCompanies.map((c) => (
+                            <div key={c.id} className="tactile-card p-8 bg-white rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center font-black text-2xl">
+                                            {c.companyName?.charAt(0) || c.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-black tracking-tighter">{c.companyName || c.name}</h3>
+                                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Auth Email: {c.email}</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mt-4">
+                                        <div className="bg-gray-50 p-3 rounded-xl border border-black/5">
+                                            <p className="text-[8px] font-black uppercase text-gray-400">Team Size</p>
+                                            <p className="font-bold text-sm">{c.teamSize || 'N/A'}</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-3 rounded-xl border border-black/5">
+                                            <p className="text-[8px] font-black uppercase text-gray-400">Location</p>
+                                            <p className="font-bold text-sm">{c.location || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                                    <button 
+                                        onClick={() => handleCompanyVerification(c.id, 'REJECTED')}
+                                        className="px-8 py-4 bg-white text-coral border-2 border-coral rounded-xl font-black text-xs uppercase tracking-widest hover:bg-coral hover:text-white transition-all flex items-center gap-2"
+                                    >
+                                        <XIcon className="w-4 h-4" /> Reject Node
+                                    </button>
+                                    <button 
+                                        onClick={() => handleCompanyVerification(c.id, 'VERIFIED')}
+                                        className="px-8 py-4 bg-forest text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2"
+                                    >
+                                        <Check className="w-4 h-4" /> Verify Entity
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
