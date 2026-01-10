@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef, memo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target, ShieldCheck, Upload, FileArchive, X, Github, Cpu, AlertCircle, LayoutDashboard, BrainCircuit } from 'lucide-react';
+import { Search, Star, Loader2, Code2, Terminal, IndianRupee, Lock, ArrowUpRight, Zap, Target, ShieldCheck, Upload, FileArchive, X, Github, Cpu, AlertCircle, LayoutDashboard, BrainCircuit, History } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import SubmissionSuccessModal from '../components/SubmissionSuccessModal.tsx';
@@ -68,7 +68,11 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
     
     const fileInputRef = useRef<HTMLInputElement>(null);
     const currentUserData = useMemo(() => allUsers.find(u => u.id === user?.id) || user, [allUsers, user]);
-    const totalEarned = useMemo(() => payments.reduce((acc, p) => acc + (parseFloat(p.netAmount?.replace(/[^\d.]/g, '') || '0')), 0), [payments]);
+    const totalEarned = useMemo(() => {
+        return payments
+            .filter(p => p.toId === user?.id)
+            .reduce((acc, p) => acc + (parseFloat(p.netAmount?.replace(/[^\d.]/g, '') || '0')), 0);
+    }, [payments, user]);
 
     const filteredProblems = useMemo(() => {
         return problems.filter(p => {
@@ -95,9 +99,15 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
         setShowProblemDetailModal(true);
     };
 
+    const navigateToPayments = () => {
+        window.dispatchEvent(new CustomEvent('nav-change', { detail: 'PAYMENT_HISTORY' }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedProblemIdForSubmission && solutionText.trim()) {
+            if (!window.confirm("Are you sure you want to submit this solution?")) return;
+            
             setIsSubmitting(true);
             try {
                 await addSolution(selectedProblemIdForSubmission, solutionText, solutionFile || undefined, { githubLink, techStack, limitations });
@@ -134,8 +144,12 @@ const StudentPortal: React.FC<StudentPortalProps> = ({ onProfileClick }) => {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:gap-6 w-full lg:w-auto">
-                       <div className="tactile-card bg-forest text-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-2 border-black">
-                          <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">Net Extraction</p>
+                       <div 
+                         onClick={navigateToPayments}
+                         className="tactile-card bg-forest text-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-2 border-black cursor-pointer hover:scale-105 transition-transform group relative overflow-hidden"
+                       >
+                          <div className="absolute right-[-10px] top-[-10px] opacity-10 group-hover:rotate-12 transition-transform"><History className="w-16 h-16" /></div>
+                          <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 mb-2 flex items-center gap-2">Net Extraction <ArrowUpRight className="w-3 h-3" /></p>
                           <div className="flex items-center text-xl md:text-3xl font-black"><IndianRupee className="w-4 h-4 md:w-5 md:h-5 mr-1" />{totalEarned.toLocaleString('en-IN')}</div>
                        </div>
                        <div className="tactile-card bg-citrus text-black p-4 md:p-6 rounded-2xl md:rounded-3xl border-2 border-black">

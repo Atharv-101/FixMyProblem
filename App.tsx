@@ -24,8 +24,9 @@ const ProfileDossier = lazy(() => import('./pages/ProfileDossier.tsx'));
 const Error404 = lazy(() => import('./pages/Error404.tsx'));
 const GenericInfoPage = lazy(() => import('./pages/GenericInfoPage.tsx'));
 const UsersDirectory = lazy(() => import('./pages/UsersDirectory.tsx'));
+const OperationalGuide = lazy(() => import('./pages/OperationalGuide.tsx'));
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'GENERIC_PAGE' | 'SIMULATIONS' | 'USERS_DIRECTORY';
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'GENERIC_PAGE' | 'SIMULATIONS' | 'USERS_DIRECTORY' | 'GUIDE';
 
 const LoadingFallback = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center bg-paper animate-fade-in">
@@ -128,6 +129,8 @@ const FixMyProblemApp: React.FC = () => {
     currentContent = <UsersDirectory onProfileClick={handleOpenProfile} />;
   } else if (view === 'SIMULATIONS') {
     currentContent = <SimulationHub onBack={() => navigateTo('HOME')} />;
+  } else if (view === 'GUIDE') {
+    currentContent = <OperationalGuide onBack={() => navigateTo('HOME')} onAuth={() => navigateTo('AUTH')} />;
   } else if (view === 'PRIVACY' || view === 'TERMS') {
     currentContent = <LegalPage type={view} />;
   } else if (view === 'CONTACT') {

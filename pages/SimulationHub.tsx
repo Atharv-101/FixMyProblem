@@ -107,6 +107,8 @@ const SimulationHub: React.FC<SimulationHubProps> = ({ onBack }) => {
   const handleSubmitSolution = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!submittingId || !solutionText.trim()) return;
+
+    if (!window.confirm("Are you sure you want to submit this solution?")) return;
     
     setIsSubmitting(true);
     try {

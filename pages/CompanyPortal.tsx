@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole, Problem, Solution, User } from '../types.ts';
-import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag, Wand2, FileArchive, ShieldAlert, FileText, Clock, XCircle } from 'lucide-react';
+import { Briefcase, Edit2, Power, Download, Award, Star, IndianRupee, CheckCircle2, Sparkles, Loader2, Wallet, Plus, Activity, Info, AlertTriangle, Cpu, Terminal, Layers, Tag, Wand2, FileArchive, ShieldAlert, FileText, Clock, XCircle, History } from 'lucide-react';
 import Modal from '../components/Modal.tsx';
 import ProfileEditModal from '../components/ProfileEditModal.tsx';
 import StarRatingInput from '../components/StarRatingInput.tsx';
@@ -62,7 +62,7 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                            {isRejected ? <XCircle className="w-12 h-12" /> : <ShieldAlert className="w-12 h-12" />}
                         </div>
 
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 bg-black rounded-xl text-[10px] font-black uppercase tracking-widest mb-8 border-2 shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] ${isRejected ? 'text-coral border-coral' : 'text-citrus border-citrus'}`}>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 bg-black rounded-xl text-[10px] font-black uppercase tracking-widest mb-8 border-2 shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] ${isRejected ? "text-coral border-coral" : "text-citrus border-citrus"}`}>
                             {isRejected ? "Grid Access Revoked" : <><Clock className="w-3.5 h-3.5 animate-pulse" /> Manual Audit In Progress</>}
                         </div>
 
@@ -143,6 +143,10 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
         setCurrentProblem(null);
         resetForm();
         setModalMode('POST');
+    };
+
+    const navigateToPayments = () => {
+        window.dispatchEvent(new CustomEvent('nav-change', { detail: 'PAYMENT_HISTORY' }));
     };
 
     const openEditModal = (problem: Problem) => {
@@ -228,6 +232,9 @@ const CompanyPortal: React.FC<CompanyPortalProps> = ({ onProfileClick }) => {
                                 </button>
                                 <button onClick={() => user && onProfileClick(user.id)} className="text-sm md:text-lg font-black text-forest flex items-center group text-left">
                                     <Activity className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:scale-110 transition-transform" /> View Public Dossier
+                                </button>
+                                <button onClick={navigateToPayments} className="text-sm md:text-lg font-black text-black flex items-center group text-left hover:text-coral transition-colors">
+                                    <History className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:rotate-[-12deg] transition-transform" /> Financial Ledger
                                 </button>
                             </div>
                         </div>

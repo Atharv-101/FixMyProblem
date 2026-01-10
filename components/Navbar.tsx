@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../context/Store.tsx';
 import { UserRole } from '../types.ts';
-import { LogOut, Code2, Menu, X, ArrowRight, Home, LayoutDashboard, Trophy, PhoneCall, BrainCircuit, Users, Sparkles } from 'lucide-react';
+import { LogOut, Code2, Menu, X, ArrowRight, Home, LayoutDashboard, Trophy, PhoneCall, BrainCircuit, Users, Sparkles, HelpCircle } from 'lucide-react';
 
-type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'SIMULATIONS' | 'USERS_DIRECTORY';
+type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'SIMULATIONS' | 'USERS_DIRECTORY' | 'GUIDE';
 
 interface NavbarProps {
   onViewChange: (view: ViewState) => void;
@@ -69,6 +69,7 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
           
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
+            <button onClick={() => handleNav('GUIDE')} className="text-[10px] font-black uppercase tracking-[0.2em] text-coral flex items-center gap-1 hover:text-black transition-colors"><HelpCircle className="w-3.5 h-3.5"/> Working</button>
             <button onClick={() => handleNav('SIMULATIONS')} className="text-[10px] font-black uppercase tracking-[0.2em] text-forest flex items-center gap-1 hover:text-black transition-colors"><BrainCircuit className="w-3.5 h-3.5"/> Practice</button>
             <button onClick={() => handleNav('USERS_DIRECTORY')} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-black transition-colors flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Users</button>
             <button onClick={() => handleNav('LEADERBOARD')} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-black transition-colors flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" /> Leaderboard</button>
@@ -150,6 +151,9 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
             )}
             <button onClick={() => handleNav('HOME')} className="text-4xl font-black text-black text-left tracking-tighter flex items-center gap-4 opacity-50">
               <Home className="w-10 h-10" /> Home
+            </button>
+            <button onClick={() => handleNav('GUIDE')} className="text-4xl font-black text-black text-left tracking-tighter flex items-center gap-4">
+              <HelpCircle className="w-10 h-10 text-coral" /> Working
             </button>
             <button onClick={() => handleNav('SIMULATIONS')} className="text-4xl font-black text-black text-left tracking-tighter flex items-center gap-4">
               <BrainCircuit className="w-10 h-10 text-forest" /> Practice
