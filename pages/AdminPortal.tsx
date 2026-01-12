@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
-import StarRatingInput from '../components/StarRatingInput.tsx';
 import { refineProblemDescription } from '../services/geminiService.ts';
 import * as XLSX from 'xlsx';
 
@@ -50,13 +49,28 @@ const ProblemRow = memo(({
 ));
 
 const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onProfileClick }) => {
-  const { allUsers, problems, adminDeleteProblem, bulkDeleteProblems, bulkAddProblems, adminUpdateCompanyStatus } = useStore();
+  const { allUsers, problems, adminDeleteProblem, bulkDeleteProblems, bulkAddProblems, adminUpdateCompanyStatus, addProblem } = useStore();
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'USERS' | 'CONTENT' | 'COMPANY_AUDITS' | 'SETTINGS'>('OVERVIEW');
   const [showProblemDetailModal, setShowProblemDetailModal] = useState(false);
   const [currentProblemForDetails, setCurrentProblemForDetails] = useState<Problem | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [visibleCount, setVisibleCount] = useState(20);
   
+  // Post Challenge State
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+  const [expectedBehavior, setExpectedBehavior] = useState('');
+  const [currentBehavior, setCurrentBehavior] = useState('');
+  const [techStack, setTechStack] = useState('');
+  const [stepsToReproduce, setStepsToReproduce] = useState('');
+  const [impact, setImpact] = useState('');
+  const [bounty, setBounty] = useState('');
+  const [tags, setTags] = useState('');
+  const [isSimulation, setIsSimulation] = useState(true);
+  const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM');
+
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const bulkInputRef = useRef<HTMLInputElement>(null);
@@ -79,11 +93,42 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
   }, [allUsers]);
 
   const handleDownloadTemplate = () => {
-    const headers = ["Title", "Description", "Bounty", "Difficulty", "Tags"];
-    const csvContent = [headers, ["Sample React Debugging", "Fix the memory leak...", "5000", "MEDIUM", "React, Hooks"]].map(e => e.join(",")).join("\n");
+    const headers = [
+      "Title", 
+      "Description", 
+      "Bounty", 
+      "Difficulty", 
+      "Tags", 
+      "ExpectedBehavior", 
+      "CurrentBehavior", 
+      "TechStack", 
+      "StepsToReproduce", 
+      "Impact", 
+      "IsSimulation"
+    ];
+    
+    const sampleData = [
+      "API Memory Leak Recovery",
+      "Fix the critical memory leak in the core extraction API.",
+      "5000",
+      "HARD",
+      "Rust, Kafka, AWS",
+      "Stable memory usage under 10k RPS load.",
+      "OOM killer terminates pod after 5 minutes of high traffic.",
+      "Rust (Actix), Kafka, AWS EKS",
+      "1. Trigger high volume traffic. 2. Monitor Grafana. 3. Observe OOM.",
+      "CRITICAL",
+      "TRUE"
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      sampleData.map(item => `"${item.replace(/"/g, '""')}"`).join(",")
+    ].join("\n");
+
     const link = document.createElement("a");
     link.setAttribute("href", URL.createObjectURL(new Blob([csvContent], { type: 'text/csv' })));
-    link.setAttribute("download", "simulation_template.csv");
+    link.setAttribute("download", "problem_deployment_template.csv");
     link.click();
   };
 
@@ -100,13 +145,64 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
                 description: item.Description || '',
                 bounty: (item.Bounty || '0').toString(),
                 difficulty: (item.Difficulty || 'MEDIUM').toUpperCase(),
-                tags: (item.Tags || '').split(',').map((t: string) => t.trim()),
-                isSimulation: true
+                tags: (item.Tags || '').split(',').map((t: string) => t.trim()).filter((t: string) => t),
+                expectedBehavior: item.ExpectedBehavior || '',
+                currentBehavior: item.CurrentBehavior || '',
+                techStack: item.TechStack || '',
+                stepsToReproduce: item.StepsToReproduce || '',
+                impact: item.Impact || '',
+                isSimulation: item.IsSimulation?.toString().toUpperCase() === 'TRUE' || item.IsSimulation === true
             }));
             if (pToUp.length) await bulkAddProblems(pToUp);
-        } catch (err) { alert("Format Error."); } finally { setIsSyncing(false); }
+        } catch (err) { 
+            console.error("Bulk Upload Failed:", err);
+            alert("Format Error during extraction."); 
+        } finally { 
+            setIsSyncing(false); 
+            if (bulkInputRef.current) bulkInputRef.current.value = '';
+        }
     };
     reader.readAsBinaryString(file);
+  };
+
+  const handleManualPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const problemData = {
+        title,
+        description: desc,
+        expectedBehavior,
+        currentBehavior,
+        techStack,
+        stepsToReproduce,
+        impact,
+        bounty: bounty.startsWith('₹') ? bounty : `₹${bounty}`,
+        tags: tags.split(',').map(t => t.trim()).filter(t => t),
+        isSimulation,
+        difficulty
+    };
+
+    try {
+        await addProblem(problemData);
+        setShowPostModal(false);
+        resetForm();
+    } catch (err) {
+        alert("Failed to deploy challenge node.");
+    }
+  };
+
+  const resetForm = () => {
+    setTitle(''); setDesc(''); setBounty(''); setTags('');
+    setExpectedBehavior(''); setCurrentBehavior('');
+    setTechStack(''); setStepsToReproduce(''); setImpact('');
+    setIsSimulation(true); setDifficulty('MEDIUM');
+  };
+
+  const handleRefine = async () => {
+    if (!desc.trim()) return;
+    setIsRefining(true);
+    const refined = await refineProblemDescription(desc);
+    setDesc(refined);
+    setIsRefining(false);
   };
 
   const handleBulkDelete = async () => {
@@ -128,7 +224,7 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
   return (
     <div className="min-h-screen bg-transparent pt-32 px-4 pb-12 relative">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8 reveal">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-8 reveal">
             <div className="tactile-card bg-black text-white p-10 rounded-[3rem] shadow-xl relative overflow-hidden flex-1 w-full">
               <div className="absolute right-[-20px] top-[-20px] opacity-10 p-4"><Shield className="w-64 h-64" /></div>
               <div className="relative z-10">
@@ -139,11 +235,14 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
                   <p className="text-gray-400 font-bold uppercase tracking-[0.2em] mt-4">Infrastructure & Audit Control 👀</p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                <button onClick={handleDownloadTemplate} className="tactile-btn px-6 py-6 bg-paper text-black border-4 border-black rounded-[2rem] font-black shadow-xl"><Download className="w-5 h-5" /></button>
+            <div className="flex flex-wrap gap-4 w-full lg:w-auto">
+                <button onClick={() => setShowPostModal(true)} className="tactile-btn flex-1 lg:flex-none px-8 py-6 bg-black text-white border-4 border-black rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 shadow-xl hover:bg-forest transition-all">
+                    <Plus className="w-6 h-6 text-citrus" /> Manual Entry
+                </button>
+                <button onClick={handleDownloadTemplate} title="Download Full Template CSV" className="tactile-btn p-6 bg-paper text-black border-4 border-black rounded-[2rem] font-black shadow-xl"><Download className="w-5 h-5" /></button>
                 <input type="file" ref={bulkInputRef} onChange={handleBulkUpload} className="hidden" accept=".xlsx,.xls,.csv" />
-                <button disabled={isSyncing} onClick={() => bulkInputRef.current?.click()} className="tactile-btn px-8 py-6 bg-citrus text-black border-4 border-black rounded-[2rem] font-black text-lg flex items-center gap-4 shadow-xl">
-                    {isSyncing ? <Loader2 className="w-6 h-6 animate-spin" /> : <FileSpreadsheet className="w-6 h-6" />} Sync Nodes
+                <button disabled={isSyncing} onClick={() => bulkInputRef.current?.click()} className="tactile-btn flex-1 lg:flex-none px-8 py-6 bg-citrus text-black border-4 border-black rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 shadow-xl">
+                    {isSyncing ? <Loader2 className="w-6 h-6 animate-spin" /> : <FileSpreadsheet className="w-6 h-6" />} Bulk Sync
                 </button>
             </div>
         </div>
@@ -230,7 +329,7 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
                 ) : (
                     <div className="grid gap-6">
                         {pendingCompanies.map((c) => (
-                            <div key={c.id} className="tactile-card p-8 bg-white rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                            <div key={c.id} className="tactile-card p-8 bg-white rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 border-2 border-black shadow-[8_8px_0px_0px_rgba(0,0,0,1)]">
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center gap-4">
                                         <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center font-black text-2xl">
@@ -290,6 +389,98 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
             </div>
         )}
       </div>
+
+      {/* Manual Post Modal */}
+      <Modal isOpen={showPostModal} onClose={() => setShowPostModal(false)} title="Manual Deployment">
+          <form onSubmit={handleManualPost} className="space-y-6 max-h-[75vh] overflow-y-auto px-1 custom-scrollbar">
+              <div className="flex gap-4 p-4 bg-citrus/10 border-2 border-black rounded-2xl">
+                  <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="isSim" 
+                        checked={isSimulation} 
+                        onChange={e => setIsSimulation(e.target.checked)}
+                        className="w-5 h-5 accent-black border-2 border-black"
+                      />
+                      <label htmlFor="isSim" className="text-xs font-black uppercase cursor-pointer">Practice Mode</label>
+                  </div>
+                  <div className="h-6 w-px bg-black/10 mx-2"></div>
+                  <div className="flex-1 flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase text-gray-400">Level:</span>
+                      <select 
+                        value={difficulty} 
+                        onChange={e => setDifficulty(e.target.value as any)}
+                        className="bg-transparent text-xs font-black uppercase outline-none flex-1"
+                      >
+                          <option value="EASY">EASY</option>
+                          <option value="MEDIUM">MEDIUM</option>
+                          <option value="HARD">HARD</option>
+                      </select>
+                  </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Terminal className="w-3 h-3"/> Title</label>
+                      <input required className="w-full border-2 border-black p-4 rounded-xl font-black bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="API Memory Leak" value={title} onChange={e => setTitle(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><IndianRupee className="w-3 h-3"/> Bounty</label>
+                      <input required className="w-full border-2 border-black p-4 rounded-xl font-black bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="5,000" value={bounty} onChange={e => setBounty(e.target.value)} />
+                  </div>
+              </div>
+
+              <div className="space-y-2">
+                  <div className="flex justify-between items-center mb-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Info className="w-3 h-3"/> Detailed Summary</label>
+                      <button 
+                          type="button" 
+                          onClick={handleRefine}
+                          disabled={isRefining || !desc.trim()}
+                          className="flex items-center gap-1.5 px-3 py-1 bg-black text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-forest disabled:opacity-40 transition-all border border-citrus/30"
+                      >
+                          {isRefining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />} AI Refine
+                      </button>
+                  </div>
+                  <textarea required className="w-full border-2 border-black p-4 rounded-xl h-32 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="Define the challenge parameters..." value={desc} onChange={e => setDesc(e.target.value)} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><CheckCircle2 className="w-3 h-3"/> Expected State</label>
+                      <textarea className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="Success criteria..." value={expectedBehavior} onChange={e => setExpectedBehavior(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><AlertTriangle className="w-3 h-3"/> Error State</label>
+                      <textarea className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="Current bug logs..." value={currentBehavior} onChange={e => setCurrentBehavior(e.target.value)} />
+                  </div>
+              </div>
+
+              <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Cpu className="w-3 h-3"/> System Stack</label>
+                  <input className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="Rust, WebAssembly, Kafka..." value={techStack} onChange={e => setTechStack(e.target.value)} />
+              </div>
+
+              <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Layers className="w-3 h-3"/> Steps to Reproduce</label>
+                  <textarea className="w-full border-2 border-black p-4 rounded-xl h-24 font-bold bg-paper outline-none text-sm focus:bg-citrus/5 transition-all" placeholder="Protocol to trigger the bug..." value={stepsToReproduce} onChange={e => setStepsToReproduce(e.target.value)} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Activity className="w-3 h-3"/> System Impact</label>
+                      <input className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="Critical, Systemic, Minor..." value={impact} onChange={e => setImpact(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2"><Tag className="w-3 h-3"/> Grid Tags</label>
+                      <input className="w-full border-2 border-black p-4 rounded-xl font-bold bg-paper outline-none focus:bg-citrus/5 transition-all" placeholder="Security, Performance, UI..." value={tags} onChange={e => setTags(e.target.value)} />
+                  </div>
+              </div>
+
+              <button type="submit" className="tactile-btn w-full bg-black text-white py-6 rounded-2xl font-black text-xl uppercase tracking-widest shadow-[6px_6px_0px_0px_rgba(253,224,71,1)] hover:bg-forest transition-all">Deploy Challenge <Zap className="inline-block ml-3 w-6 h-6 text-citrus" /></button>
+          </form>
+      </Modal>
+
       <ProblemDetailModal isOpen={showProblemDetailModal} onClose={() => setShowProblemDetailModal(false)} problem={currentProblemForDetails} onProfileClick={onProfileClick} />
     </div>
   );
