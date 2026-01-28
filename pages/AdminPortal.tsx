@@ -7,7 +7,7 @@ import {
   Terminal, Cpu, IndianRupee, Settings, Trash2, Ban, Plus, 
   Briefcase, Layers, Info, Tag, Wand2, AlertTriangle, BarChart3, 
   BrainCircuit, Layout, Zap, Edit2, Eye, XCircle, Download, FileArchive, ArrowUpRight, ShieldCheck, UserCheck, FileSpreadsheet, X, HelpCircle,
-  Square, CheckSquare, Trash, Building2, Check, X as XIcon
+  Square, CheckSquare, Trash, Building2, Check, X as XIcon, Share, FileJson, FileOutput
 } from 'lucide-react';
 import ProblemDetailModal from '../components/ProblemDetailModal.tsx';
 import Modal from '../components/Modal.tsx';
@@ -132,6 +132,61 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
     link.click();
   };
 
+  const generateCSV = (problemList: Problem[], filename: string) => {
+    const headers = [
+      "Title", 
+      "Description", 
+      "Bounty", 
+      "Difficulty", 
+      "Tags", 
+      "ExpectedBehavior", 
+      "CurrentBehavior", 
+      "TechStack", 
+      "StepsToReproduce", 
+      "Impact", 
+      "IsSimulation"
+    ];
+
+    const rows = problemList.map(p => [
+      p.title,
+      p.description,
+      p.bounty.replace(/[^0-9.]/g, ''),
+      p.difficulty || 'MEDIUM',
+      (p.tags || []).join(", "),
+      p.expectedBehavior || '',
+      p.currentBehavior || '',
+      p.techStack || '',
+      p.stepsToReproduce || '',
+      p.impact || '',
+      p.isSimulation ? 'TRUE' : 'FALSE'
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(item => `"${(item || '').toString().replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const link = document.createElement("a");
+    link.setAttribute("href", URL.createObjectURL(new Blob([csvContent], { type: 'text/csv' })));
+    link.setAttribute("download", filename);
+    link.click();
+  };
+
+  const handleExportSimulations = () => {
+    const simulations = problems.filter(p => p.isSimulation);
+    if (simulations.length === 0) {
+      alert("No simulations detected for export.");
+      return;
+    }
+    generateCSV(simulations, `grid_simulations_export_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleExportSelected = () => {
+    const selected = problems.filter(p => selectedProblemIds.includes(p.id));
+    if (selected.length === 0) return;
+    generateCSV(selected, `selected_nodes_export_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
   const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -239,7 +294,10 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
                 <button onClick={() => setShowPostModal(true)} className="tactile-btn flex-1 lg:flex-none px-8 py-6 bg-black text-white border-4 border-black rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 shadow-xl hover:bg-forest transition-all">
                     <Plus className="w-6 h-6 text-citrus" /> Manual Entry
                 </button>
-                <button onClick={handleDownloadTemplate} title="Download Full Template CSV" className="tactile-btn p-6 bg-paper text-black border-4 border-black rounded-[2rem] font-black shadow-xl"><Download className="w-5 h-5" /></button>
+                <div className="flex gap-2">
+                    <button onClick={handleDownloadTemplate} title="Download Full Template CSV" className="tactile-btn p-6 bg-paper text-black border-4 border-black rounded-[2rem] font-black shadow-xl"><Download className="w-5 h-5" /></button>
+                    <button onClick={handleExportSimulations} title="Export All Grid Simulations" className="tactile-btn p-6 bg-forest text-citrus border-4 border-black rounded-[2rem] font-black shadow-xl"><Share className="w-5 h-5" /></button>
+                </div>
                 <input type="file" ref={bulkInputRef} onChange={handleBulkUpload} className="hidden" accept=".xlsx,.xls,.csv" />
                 <button disabled={isSyncing} onClick={() => bulkInputRef.current?.click()} className="tactile-btn flex-1 lg:flex-none px-8 py-6 bg-citrus text-black border-4 border-black rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 shadow-xl">
                     {isSyncing ? <Loader2 className="w-6 h-6 animate-spin" /> : <FileSpreadsheet className="w-6 h-6" />} Bulk Sync
@@ -329,7 +387,7 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
                 ) : (
                     <div className="grid gap-6">
                         {pendingCompanies.map((c) => (
-                            <div key={c.id} className="tactile-card p-8 bg-white rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 border-2 border-black shadow-[8_8px_0px_0px_rgba(0,0,0,1)]">
+                            <div key={c.id} className="tactile-card p-8 bg-white rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-6 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center gap-4">
                                         <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center font-black text-2xl">
@@ -373,16 +431,22 @@ const AdminPortal: React.FC<{ onProfileClick: (id: string) => void }> = ({ onPro
         )}
 
         {selectedProblemIds.length > 0 && activeTab === 'CONTENT' && (
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-2xl px-6 animate-pop">
-                <div className="bg-coral text-white p-6 rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black border-2 border-white/20">{selectedProblemIds.length}</div>
-                        <div><p className="font-black uppercase tracking-widest text-xs">Node extraction sequence</p></div>
+            <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-[95%] sm:max-w-4xl px-4 sm:px-6 animate-pop">
+                <div className="bg-coral text-white p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-row items-center justify-between gap-4 sm:gap-6">
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                        <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black text-white rounded-xl sm:rounded-2xl flex items-center justify-center font-black border-2 border-white/20 text-sm sm:text-xl">{selectedProblemIds.length}</div>
+                        <div className="hidden xs:block">
+                            <p className="font-black uppercase tracking-widest text-[9px] sm:text-xs leading-none">Extraction</p>
+                            <p className="hidden sm:block text-[10px] font-bold opacity-60 uppercase mt-1">Nodes marked for sync</p>
+                        </div>
                     </div>
-                    <div className="flex gap-3">
-                        <button onClick={() => setSelectedProblemIds([])} className="px-6 py-3 bg-black/20 rounded-xl font-black text-[10px] uppercase">Cancel</button>
-                        <button onClick={handleBulkDelete} disabled={isBulkDeleting} className="px-8 py-3 bg-white text-coral rounded-xl font-black text-[10px] uppercase flex items-center gap-2">
-                            {isBulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash className="w-4 h-4" /> Wipe Nodes</>}
+                    <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
+                        <button onClick={() => setSelectedProblemIds([])} className="px-3 sm:px-5 py-2 sm:py-3 bg-black/20 rounded-lg sm:rounded-xl font-black text-[8px] sm:text-[10px] uppercase hover:bg-black/30 transition-all">Cancel</button>
+                        <button onClick={handleExportSelected} className="px-3 sm:px-6 py-2 sm:py-3 bg-citrus text-black rounded-lg sm:rounded-xl font-black text-[8px] sm:text-[10px] uppercase flex items-center gap-1.5 sm:gap-2 hover:bg-white transition-all">
+                            <FileOutput className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Export CSV</span><span className="sm:hidden">CSV</span>
+                        </button>
+                        <button onClick={handleBulkDelete} disabled={isBulkDeleting} className="px-3 sm:px-8 py-2 sm:py-3 bg-white text-coral rounded-lg sm:rounded-xl font-black text-[8px] sm:text-[10px] uppercase flex items-center gap-1.5 sm:gap-2 hover:bg-black transition-all">
+                            {isBulkDeleting ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : <><Trash className="w-3 h-3 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Wipe Nodes</span><span className="sm:hidden">Wipe</span></>}
                         </button>
                     </div>
                 </div>
