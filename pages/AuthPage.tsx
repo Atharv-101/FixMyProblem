@@ -37,9 +37,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
     if (err.includes('auth/email-already-in-use')) {
       return "This identity is already synced to the grid. Try logging in instead.";
     }
-    if (err.includes('.edu') || err.includes('ac.xx')) {
-      return "Solver protocol requires a verified .edu or academic digital mail node.";
-    }
     return rawError || "The grid encountered an unknown synchronization error. Please retry the protocol.";
   };
 
@@ -68,11 +65,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
             await auth.signOut(); // Keep them on the auth page if not verified
         }
       } else {
-        if (role === UserRole.STUDENT) {
-            const eduRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(edu|ac\.[a-z]{2}|edu\.in)$/;
-            if (!eduRegex.test(email)) throw new Error("Solver requires .edu or .ac.xx credentials.");
-        }
-        
         // Root Key Validations
         if (role === UserRole.ADMIN && extraInfo !== 'admin2024') throw new Error("Invalid Admin Root Key.");
         if (role === UserRole.MENTOR && extraInfo !== 'mentor2024') throw new Error("Invalid Mentor Access Key.");
