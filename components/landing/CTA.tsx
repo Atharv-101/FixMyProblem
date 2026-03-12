@@ -3,7 +3,7 @@ import { Terminal, IndianRupee } from 'lucide-react';
 import { UserRole } from '../../types';
 
 interface CTAProps {
-  onLoginClick: (role: UserRole) => void;
+  onLoginClick: (role: UserRole, isLogin?: boolean) => void;
 }
 
 const CTA: React.FC<CTAProps> = ({ onLoginClick }) => {
@@ -18,13 +18,13 @@ const CTA: React.FC<CTAProps> = ({ onLoginClick }) => {
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-6 animate-fade-in-up">
            <button 
-             onClick={() => onLoginClick(UserRole.STUDENT)}
+             onClick={() => onLoginClick(UserRole.STUDENT, false)}
              className="group relative px-10 py-4 bg-white rounded-full font-bold text-xl text-blue-600 shadow-xl transition-all hover:scale-105 active:scale-95"
            >
              Start Hacking <Terminal className="inline-block ml-3 w-6 h-6" />
            </button>
            <button 
-             onClick={() => onLoginClick(UserRole.COMPANY)}
+             onClick={() => onLoginClick(UserRole.COMPANY, false)}
              className="px-10 py-4 bg-blue-700 text-white border border-blue-500 rounded-full font-bold text-xl hover:bg-blue-800 transition-colors flex items-center justify-center shadow-lg"
            >
              Post a Bounty <IndianRupee className="ml-3 w-6 h-6 text-green-300" />

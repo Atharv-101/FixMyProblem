@@ -25,7 +25,7 @@ import PracticeStats from '../components/landing/PracticeStats.tsx';
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'SIMULATIONS';
 
 interface LandingPageProps {
-  onLoginClick: (role: UserRole) => void;
+  onLoginClick: (role: UserRole, isLogin?: boolean) => void;
   onViewChange: (view: any) => void;
   onProfileClick: (id: string) => void;
   onPageNav: (title: string, category: string) => void;
@@ -82,8 +82,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onViewChange, o
 
   const handleSolveFromDetails = (problemId: string) => {
     setShowProblemDetailModal(false);
-    onViewChange('AUTH');
-    onLoginClick(UserRole.STUDENT);
+    onLoginClick(UserRole.STUDENT, false);
   };
 
   return (

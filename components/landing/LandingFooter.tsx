@@ -7,7 +7,7 @@ import {
 import { UserRole } from '../../types';
 
 interface LandingFooterProps {
-  onLoginClick: (role: UserRole) => void;
+  onLoginClick: (role: UserRole, isLogin?: boolean) => void;
   onViewChange: (view: any) => void;
   onPageNav: (title: string, category: string) => void;
 }
@@ -144,7 +144,7 @@ const LandingFooter: React.FC<LandingFooterProps> = ({ onLoginClick, onViewChang
             >
                <h5 className="text-3xl font-black text-black leading-none italic mb-4">Ready?</h5>
                <button 
-                  onClick={() => onLoginClick(UserRole.STUDENT)}
+                  onClick={() => onLoginClick(UserRole.STUDENT, false)}
                   className="bg-black text-white px-8 py-3 rounded-2xl text-sm font-black uppercase tracking-widest group-hover:scale-105 transition-transform"
                >
                   Join Now

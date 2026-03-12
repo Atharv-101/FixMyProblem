@@ -8,13 +8,22 @@ import { auth } from '../services/firebase.ts';
 
 interface AuthPageProps {
   initialRole?: UserRole;
+  initialIsLogin?: boolean;
   onBack: () => void;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ initialRole, onBack }) => {
+const AuthPage: React.FC<AuthPageProps> = ({ initialRole, initialIsLogin = true, onBack }) => {
   const { login, register, resetPassword } = useStore();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
   const [role, setRole] = useState<UserRole>(initialRole || UserRole.STUDENT);
+
+  useEffect(() => {
+    setIsLogin(initialIsLogin);
+  }, [initialIsLogin]);
+
+  useEffect(() => {
+    if (initialRole) setRole(initialRole);
+  }, [initialRole]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');

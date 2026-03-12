@@ -7,7 +7,7 @@ import { LogOut, Code2, Menu, X, ArrowRight, Home, LayoutDashboard, Trophy, Phon
 type ViewState = 'HOME' | 'LEADERBOARD' | 'PRIVACY' | 'TERMS' | 'CONTACT' | 'AUTH' | 'DASHBOARD' | 'PAYMENT_HISTORY' | 'PROFILE_VIEW' | 'ERROR_404' | 'SIMULATIONS' | 'USERS_DIRECTORY' | 'GUIDE';
 
 interface NavbarProps {
-  onViewChange: (view: ViewState) => void;
+  onViewChange: (view: ViewState, isLogin?: boolean) => void;
   transparent?: boolean;
   onProfileClick: (id: string) => void;
 }
@@ -25,8 +25,8 @@ const Navbar: React.FC<NavbarProps> = ({ onViewChange, transparent, onProfileCli
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleNav = useCallback((view: ViewState) => {
-    onViewChange(view);
+  const handleNav = useCallback((view: ViewState, isLogin?: boolean) => {
+    onViewChange(view, isLogin);
     setIsMobileMenuOpen(false);
     document.body.style.overflow = 'auto';
   }, [onViewChange]);

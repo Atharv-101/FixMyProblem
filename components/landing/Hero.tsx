@@ -6,7 +6,7 @@ import { getLiveInsights } from '../../services/geminiService.ts';
 import { useStore } from '../../context/Store.tsx';
 
 interface HeroProps {
-  onLoginClick: (role: UserRole) => void;
+  onLoginClick: (role: UserRole, isLogin?: boolean) => void;
   stats: any;
 }
 
@@ -79,16 +79,16 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick, stats }) => {
             ) : (
               <>
                 <button 
-                  onClick={() => onLoginClick(UserRole.COMPANY)}
+                  onClick={() => onLoginClick(UserRole.STUDENT, false)}
                   className="tactile-btn px-8 sm:px-10 py-5 bg-coral text-white rounded-2xl font-black text-lg sm:text-xl flex items-center justify-center group"
                 >
-                  Hire Solvers <MoveRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                  Register <MoveRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform" />
                 </button>
                 <button 
-                  onClick={() => onLoginClick(UserRole.STUDENT)}
+                  onClick={() => onLoginClick(UserRole.COMPANY, false)}
                   className="tactile-btn px-8 sm:px-10 py-5 bg-white text-black border-2 border-black rounded-2xl font-black text-lg sm:text-xl hover:bg-citrus transition-colors"
                 >
-                  Solve & Earn
+                  Hire Talent
                 </button>
               </>
             )}

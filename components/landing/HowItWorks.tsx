@@ -4,7 +4,7 @@ import { UserRole } from '../../types';
 import { Search, Code2, Rocket, ArrowRight, Cpu, Zap, Lock } from 'lucide-react';
 
 interface HowItWorksProps {
-  onLoginClick: (role: UserRole) => void;
+  onLoginClick: (role: UserRole, isLogin?: boolean) => void;
 }
 
 const HowItWorks: React.FC<HowItWorksProps> = ({ onLoginClick }) => {
@@ -82,7 +82,7 @@ const HowItWorks: React.FC<HowItWorksProps> = ({ onLoginClick }) => {
 
         <div className="mt-12 md:mt-16 text-center">
            <button 
-             onClick={() => onLoginClick(UserRole.COMPANY)}
+             onClick={() => onLoginClick(UserRole.COMPANY, false)}
              className="tactile-btn px-10 md:px-12 py-5 md:py-6 bg-black text-white rounded-2xl font-black text-lg md:text-xl uppercase tracking-widest hover:bg-forest transition-all"
            >
              Initialize Project 👀

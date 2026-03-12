@@ -89,6 +89,7 @@ const FixMyProblemApp: React.FC = () => {
   const { user, loading, siteConfig } = useStore();
   const [view, setView] = useState<ViewState>('HOME');
   const [authRole, setAuthRole] = useState<UserRole>(UserRole.STUDENT);
+  const [authIsLogin, setAuthIsLogin] = useState(true);
   const [targetProfileId, setTargetProfileId] = useState<string | null>(null);
   const [activePageData, setActivePageData] = useState<{ title: string; category: string; description?: string } | null>(null);
 
@@ -102,8 +103,9 @@ const FixMyProblemApp: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  const navigateTo = (newView: ViewState) => {
+  const navigateTo = (newView: ViewState, isLogin: boolean = true) => {
     setView(newView);
+    setAuthIsLogin(isLogin);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -122,7 +124,7 @@ const FixMyProblemApp: React.FC = () => {
   let currentContent;
   
   if (view === 'HOME') {
-    currentContent = <LandingPage onLoginClick={(role) => { setAuthRole(role); navigateTo('AUTH'); }} onViewChange={navigateTo} onProfileClick={handleOpenProfile} onPageNav={navigateToInfoPage} />;
+    currentContent = <LandingPage onLoginClick={(role, isLogin = true) => { setAuthRole(role); setAuthIsLogin(isLogin); navigateTo('AUTH', isLogin); }} onViewChange={navigateTo} onProfileClick={handleOpenProfile} onPageNav={navigateToInfoPage} />;
   } else if (view === 'LEADERBOARD') {
     currentContent = <Leaderboard onProfileClick={handleOpenProfile} />;
   } else if (view === 'USERS_DIRECTORY') {
@@ -136,7 +138,7 @@ const FixMyProblemApp: React.FC = () => {
   } else if (view === 'CONTACT') {
     currentContent = <ContactPage />;
   } else if (view === 'AUTH' && !user) {
-    currentContent = <AuthPage initialRole={authRole} onBack={() => navigateTo('HOME')} />;
+    currentContent = <AuthPage key={`${authRole}-${authIsLogin}`} initialRole={authRole} initialIsLogin={authIsLogin} onBack={() => navigateTo('HOME')} />;
   } else if (view === 'PROFILE_VIEW' && targetProfileId) {
     currentContent = <ProfileDossier userId={targetProfileId} onBack={() => navigateTo('HOME')} />;
   } else if (view === 'GENERIC_PAGE' && activePageData) {
