@@ -20,8 +20,6 @@ interface AppContextType {
   bulkAddProblems: (problemsData: Partial<Problem>[]) => Promise<void>;
   editProblem: (problemId: string, data: Partial<Problem>) => Promise<void>;
   manualCloseProblem: (problemId: string) => Promise<void>;
-  lockProblem: (problemId: string) => Promise<void>;
-  unlockProblem: (problemId: string) => Promise<void>;
   addSolution: (problemId: string, content: string, file?: File, details?: { githubLink?: string, techStack?: string, limitations?: string }) => Promise<void>;
   acceptSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, paymentMethod: string) => Promise<void>;
   verifySimulationSolution: (problemId: string, solutionId: string, studentId: string, rating: number, feedback: string, status: 'VERIFIED' | 'REJECTED') => Promise<void>;
@@ -123,25 +121,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [internalAuthUser]);
 
-  const lockProblem = useCallback(async (pId: string) => {
-    if (!user) return;
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 15);
-    await db.collection("problems").doc(pId).update({
-      lockedByStudentId: user.id,
-      lockedByStudentName: user.name,
-      lockExpiresAt: expires.toISOString()
-    });
-  }, [user]);
-
-  const unlockProblem = useCallback(async (pId: string) => {
-    await db.collection("problems").doc(pId).update({
-      lockedByStudentId: null,
-      lockedByStudentName: null,
-      lockExpiresAt: null
-    });
-  }, []);
-
   const addSolution = useCallback(async (pId: string, content: string, file?: File, details?: any) => {
     if (!user) return;
     let attachmentUrl = null;
@@ -192,8 +171,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transaction.update(solRef, { isVerified, isRejected: !isVerified, reviewStatus: status, rating, feedback, mentorId: user.id, mentorName: user.name });
       
       if (isVerified) {
-        transaction.update(probRef, { lockedByStudentId: null, lockedByStudentName: null, lockExpiresAt: null });
-
         const verifiedSims = (studentData.simSolvedCount || 0) + 1;
         const pastScores = (studentData.reviews || []).map(r => r.rating).slice(-4);
         const rollingAvg = Math.round(([...pastScores, rating].reduce((a,b) => a+b, 0)) / (pastScores.length + 1));
@@ -264,8 +241,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const contextValue = useMemo(() => ({
     user, loading, allUsers, problems, payments, siteConfig,
-    ...stableActions, addSolution, verifySimulationSolution, lockProblem, unlockProblem
-  }), [user, loading, allUsers, problems, payments, siteConfig, stableActions, addSolution, verifySimulationSolution, lockProblem, unlockProblem]);
+    ...stableActions, addSolution, verifySimulationSolution
+  }), [user, loading, allUsers, problems, payments, siteConfig, stableActions, addSolution, verifySimulationSolution]);
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 };

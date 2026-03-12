@@ -124,10 +124,6 @@ export interface Problem {
   createdAt: string;
   tags: string[];
   solutions: Solution[];
-  // New lock fields for Practice problems
-  lockedByStudentId?: string;
-  lockedByStudentName?: string;
-  lockExpiresAt?: string; // ISO String
 }
 
 export interface Payment {
